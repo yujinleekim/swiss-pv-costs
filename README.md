@@ -1,199 +1,248 @@
-# Swiss Residential Solar PV Cost — by Canton and by Municipality
+# ☀️ Swiss Residential Solar PV Costs
 
-Estimates typical residential solar PV installation costs across Switzerland,
-using randomly sampled single-family homes and Switzerland's public
-[SolarRechner](https://www.energieschweiz.ch/tools/solarrechner/) tool
-(EnergieSchweiz). Two datasets:
+**Solar PV cost quotes for randomly sampled single-family homes across Switzerland**,
+by canton and by municipality, taken from the federal
+[SolarRechner](https://www.energieschweiz.ch/tools/solarrechner/) (EnergieSchweiz).
 
-- **Canton-level** (`canton/solarrechner_quotes.csv`) — 3 addresses per canton, 26 cantons (78).
-- **Municipality-level** (`municipality/municipality_quotes.csv`) — up to 10 addresses per
-  municipality, all 2,110 Swiss municipalities (21,077).
+| Dataset | Sample | Quotes | File |
+|---|---|---|---|
+| 🏔️ **Municipality** | up to 10 homes × 2,110 municipalities = **21,077** | **20,932** (99.3%) | `municipality/municipality_quotes_summary.csv` |
+| 🗺️ **Canton** | 3 homes × 26 cantons = **78** | **78** (100%) | `canton/solarrechner_quotes_summary.csv` |
 
-## Approach
+Results as of 2026-10-18.
 
-- **Addresses are randomly sampled, not hand-picked**, from Switzerland's official
-  building registry (GWR), filtered to existing single-family houses (`GKLAS 1110`,
-  `GSTAT 1004`) with a plain numeric house number (5, not 5a / 30.1 / 714a.99).
-- **Quotes come from SolarRechner's own backend API** (Tachion), with the same
-  requests the website sends.
-- **Fixed scenario for every quote:** 4 residents ("Bewohner im Haus"), no facade
-  planes, no roof planes tilted 75° or more (wall-like surfaces; 75° is the threshold of
-  the federal tilt bonus in the EnFV, "Neigungswinkel von mindestens 75 Grad").
-- **Checked against the website** on 5 addresses with this scenario: gross investment,
-  KLEIV subsidy, tax savings and net investment are identical; payback period, total
-  balance and average return were compared on 3 addresses and are identical with the
-  same number of residents (these three depend on the residents, the costs do not).
+---
 
-## Repo structure
+## Contents
 
-```
-README.md
-canton/
-  get_address.py               Step 1: sample 3 random single-family addresses per canton
-  get_solarrechner_quotes.py   Step 2: quote every address; addresses that keep failing are
-                                replaced by a fresh random address in the same canton
-  summary_csv.py               Step 3: clean summary CSV for sharing
-  random_addresses.csv         sampled addresses
-  solarrechner_quotes.csv      full results, incl. raw_json
-  solarrechner_quotes_summary.csv  clean version -- no raw_json, no QC columns
+- [Scenario](#scenario)
+- [Quick start](#quick-start)
+- [How it works](#how-it-works)
+- [Municipality dataset](#municipality-dataset)
+- [Canton dataset](#canton-dataset)
+- [Missing quotes](#missing-quotes)
+- [Output columns](#output-columns)
+- [Repository structure](#repository-structure)
 
-municipality/
-  build_municipality_list.py   Step 1: list of all 2,110 municipalities (BFS register)
-  get_municipality_addresses.py  Step 2: sample 10 single-family addresses per municipality
-                                from the GWR bulk download (seeded, reproducible)
-  get_municipality_quotes.py   Step 3: quote every address (resumable)
-  replace_failed_municipality_addresses.py  Step 4: replace failed addresses with the next
-                                candidates of the same municipality
-  finalize_municipality_quotes.py  Step 5: one row per address, failure breakdown, summary CSV
-  repair_quotes_csv.py         utility: drop lines cut off by an interrupted run (--fix)
-  all_municipalities.csv       list of all 2,110 municipalities
-  municipality_addresses.csv   sampled addresses (after replacement)
-  municipality_quotes_summary.csv  clean results -- no raw_json, no QC columns
-```
+---
 
-Not in the repo (gitignored, large or local): `municipality/municipality_quotes.csv`
-(full results with raw_json, ~460 MB), `municipality/municipality_quote_attempts.csv`
-(quote rows of replaced addresses), `municipality/gwr_cache/` (GWR downloads, ~0.9 GB).
+## Scenario
 
-Every script resolves its file paths relative to its own location, so
-`python canton/get_address.py` (from the repo root) and
-`cd canton && python get_address.py` behave identically.
+Every quote uses the same settings:
 
-## How the quotes are requested
+| Setting | Value |
+|---|---|
+| Homes | Existing single-family houses from the federal building register (GWR): `GKLAS 1110`, `GSTAT 1004` |
+| House number | Plain numbers only (`5`, not `5a` / `30.1` / `714a.99`) |
+| Residents (*Bewohner im Haus*) | **4** |
+| Facade planes | **Off** |
+| Roof planes tilted ≥ 75° | **Off** (wall-like surfaces; 75° is the threshold of the federal tilt bonus, EnFV: *"Neigungswinkel von mindestens 75 Grad"*) |
 
-For each address (same in both quote scripts):
+> ✅ **Checked against the website** on 5 addresses with these settings: gross investment,
+> KLEIV subsidy, tax savings and net investment are identical. Payback period, total
+> balance and average return were compared on 3 addresses and are identical with the same
+> number of residents (these three depend on the residents, the costs do not).
 
-1. Geocode the address (`api3.geo.admin.ch` SearchServer) to get the feature id.
-2. `/sim/attrs`: Tachion fills in parcel, coordinates, electricity provider and tariff.
-3. `/sim/planes`: roof and facade planes of the building.
-4. `/sim/buildingReport` with `state: SOLAR_OPT` on the planes exactly as returned by
-   `/planes` — the website's first result.
-5. `/sim/buildingReport` without state, on the planes from step 4 with all facade planes
-   and all roof planes tilted ≥ 75° switched off, and `occupantNumber = 4` in
-   `signature.input` — what a user does on the website.
+---
 
-Steps 4–5 are the website's own sequence (read from its frontend code and confirmed
-with its numbers). A single `SOLAR_OPT` call with the planes already switched off gave
-higher costs in 35 of 60 tested buildings.
+## Quick start
 
-## Canton-level dataset
+Requires Python 3 and [`requests`](https://pypi.org/project/requests/) (`pip install requests`).
+Run from the repository root:
 
-### 1. Address sampling (`canton/get_address.py`)
+```bash
+# Municipality dataset
+python municipality/build_municipality_list.py              # list of municipalities
+python municipality/get_municipality_addresses.py           # sample addresses (~1-2 min)
+python municipality/get_municipality_quotes.py              # quotes (several hours, resumable; run 1-2 more times)
+python municipality/replace_failed_municipality_addresses.py
+python municipality/finalize_municipality_quotes.py         # summary CSV + failure breakdown
 
-Random points inside each canton's approximate bounding box are checked against the
-GWR (`api3.geo.admin.ch` identify) until 3 single-family homes with a plain house
-number are found.
-
-```
+# Canton dataset
 python canton/get_address.py
-```
-
-### 2. Quotes (`canton/get_solarrechner_quotes.py`)
-
-```
-python canton/get_solarrechner_quotes.py            # full run
-python canton/get_solarrechner_quotes.py --retry    # re-attempt only failed rows
-```
-
-Failures are retried; an address that still fails is replaced by a fresh random
-address in the same canton (same address rules), and `random_addresses.csv` is
-updated accordingly.
-
-### 3. Summary (`canton/summary_csv.py`)
-
-```
+python canton/get_solarrechner_quotes.py
 python canton/summary_csv.py
 ```
 
-### Result (2026-10-18)
+Every script resolves its paths relative to its own location, so it can also be run from
+inside its folder.
 
-78 of 78 addresses have quotes (3 per canton). 4 addresses were replaced after
-server errors.
+---
 
-## Municipality-level dataset
+## How it works
 
-### 1. Municipality list (`build_municipality_list.py`)
+```mermaid
+flowchart LR
+    A[BFS municipality list] --> B[GWR building register<br/>single-family homes]
+    B --> C[Random sample<br/>seed 42]
+    C --> D[SolarRechner API<br/>quote per address]
+    D -->|failed| E[Replace with next<br/>home in same municipality]
+    E --> D
+    D -->|ok| F[Summary CSV]
+```
 
-Official list of all municipalities from BFS's
+### Quote requests
+
+The scripts send the same requests as the SolarRechner website (backend: Tachion):
+
+| # | Request | What it does |
+|---|---|---|
+| 1 | `api3.geo.admin.ch` SearchServer | Geocode the address |
+| 2 | `/sim/attrs` | Parcel, coordinates, electricity provider and tariff |
+| 3 | `/sim/planes` | Roof and facade planes of the building |
+| 4 | `/sim/buildingReport`, `state: SOLAR_OPT` | Website's first result, on the planes as returned by step 3 |
+| 5 | `/sim/buildingReport`, no state | Planes from step 4 with facades and ≥ 75° roof planes off, `occupantNumber = 4` in `signature.input` |
+
+Steps 4–5 are the website's own sequence (read from its frontend code and confirmed with
+its numbers). A single `SOLAR_OPT` call with the planes already switched off gave higher
+costs in 35 of 60 tested buildings.
+
+---
+
+## Municipality dataset
+
+**21,077 addresses → 20,932 quotes (99.3%).** 2,096 of 2,110 municipalities have at least
+one quote, 2,091 have all 10.
+
+<details>
+<summary><b>1. Municipality list</b> — <code>build_municipality_list.py</code></summary>
+
+Official list from BFS's
 [Historicized Directory of Swiss Municipalities](https://www.agvchapp.bfs.admin.ch/).
 Only name and BFS number are taken from it; the register's `Parent` field gave wrong
 cantons (e.g. Horgen ZH resolved to VS), so the canton comes from the GWR data.
+</details>
 
-```
-python municipality/build_municipality_list.py
-```
+<details>
+<summary><b>2. Address sampling</b> — <code>get_municipality_addresses.py</code></summary>
 
-### 2. Address sampling (`get_municipality_addresses.py`)
+- Source: GWR public bulk download (`https://public.madd.bfs.admin.ch/<canton>.zip`),
+  cached in `municipality/gwr_cache/` (~1 GB on the first run).
+- Eligible: existing single-family homes with a street address and a plain house number.
+- Per municipality: 10 drawn with a fixed seed (`--seed`, default 42), at most 2 per
+  street, so every eligible home has the same chance of being picked.
+- Municipalities that stay below 10 are filled up: first without the street limit, then
+  with letter-suffixed numbers (`5a`), at most one building per base address.
+- The sample was drawn from the GWR export of 2026-10-15 (kept in `gwr_cache/`); a new
+  download gets the current export, which can give a different sample.
 
-Samples from the GWR public bulk download (`https://public.madd.bfs.admin.ch/<canton>.zip`,
-cached in `municipality/gwr_cache/`): all existing single-family homes with a street
-address and a plain numeric house number. Per municipality, 10 are drawn with a fixed
-seed (`--seed`, default 42), at most 2 per street, so every eligible home has the same
-chance of being picked. Only municipalities that stay below 10 are filled up: first
-without the street limit, then with letter-suffixed numbers (5a), at most one building
-per base address. About 1–2 minutes (the first run downloads ~1 GB). The sample was
-drawn from the GWR export of 2026-10-15 (kept in `gwr_cache/`); a new download gets the
-current export, which can give a different sample.
+Result (seed 42): 21,077 addresses; 2,106 municipalities at 10 (12 via the fill-up
+steps). Below 10: Berken BE 8, Mauraz VD 8, Lavizzara TI 1, Cerentino TI 0.
+</details>
 
-```
-python municipality/get_municipality_addresses.py
-```
+<details>
+<summary><b>3. Quotes</b> — <code>get_municipality_quotes.py</code></summary>
 
-Result (seed 42, GWR of 2026-10-15): 21,077 addresses; 2,106 of 2,110 municipalities
-at 10 (12 via the fill-up steps). Below 10: Berken BE 8, Mauraz VD 8, Lavizzara TI 1,
-Cerentino TI 0.
+- 20 workers by default. Measured with the earlier 4-request flow: ~8,300 addresses/hour
+  (5 workers: ~5,000/h; 40 workers was barely faster and caused more server errors).
+- Resumable: a re-run only retries addresses without a successful quote.
+</details>
 
-### 3–5. Quotes, replacement, finalize
+<details>
+<summary><b>4. Replacement</b> — <code>replace_failed_municipality_addresses.py</code></summary>
 
-```
-python municipality/get_municipality_quotes.py                  # resumable; run 1-2 more times
-python municipality/replace_failed_municipality_addresses.py
-python municipality/finalize_municipality_quotes.py
-```
+- Replaces each failed address with the next candidate of the same municipality in the
+  seeded sampling order (same rules).
+- At most 5 candidates per failed address over all runs; addresses already tried are
+  never tried again.
+- Skips candidates in postal codes that had a missing-weather-data error.
 
-- `get_municipality_quotes.py`: 20 workers by default (measured ~8,300 addresses/hour;
-  40 workers was barely faster and caused more server errors). A re-run only retries
-  addresses without a successful quote.
-- `replace_failed_municipality_addresses.py`: replaces each failed address with the
-  next candidate of the same municipality in the seeded sampling order (same rules), at
-  most 5 candidates per failed address over all runs. Candidates in a postal code that
-  had a missing-weather-data error are skipped. Addresses already tried are never tried
-  again.
-- `finalize_municipality_quotes.py`: keeps one row per address in
-  `municipality_addresses.csv`, prints the failure breakdown, writes the summary CSV,
-  and moves dropped rows to `municipality_quote_attempts.csv`.
+After the first quote run 802 addresses had failed; 657 were replaced by addresses of the
+same municipality that got a quote.
+</details>
 
-### Result (2026-10-18)
+<details>
+<summary><b>5. Finalize</b> — <code>finalize_municipality_quotes.py</code></summary>
 
-**20,932 of 21,077 addresses have quotes (99.3%)**; 2,096 of 2,110 municipalities have
-at least one quote, 2,091 have 10. The 145 failures are errors on Tachion's server:
+Keeps one row per address in `municipality_addresses.csv`, prints the failure breakdown,
+writes `municipality_quotes_summary.csv`, and moves dropped rows to
+`municipality_quote_attempts.csv`.
+</details>
 
-| Failure | Addresses | What was checked |
-|---|---|---|
-| Missing weather data (`readMeteodataFile`) | 133 | The missing file is `CH<PLZ>.met` for the address's postal code (20 postal codes); the server picks it from `attrs.plz4`. No address in these postal codes got a quote. 12 municipalities have only such a postal code (e.g. Yens, Brüttelen, Montfaucon); Les Enfers and Saint-Brais have no other homes left. |
-| `buildingReport` server error (`null` / NullPointerException) | 11 | All have no wall data in `/planes`; every such building tested failed (77 of 77). In Collonges VS no tested building has wall data (60 tried); the website gives no quote there either (1 address checked). |
-| `BUILDING_TOO_BIG` (`/planes`) | 1 | Not related to building size (median footprint 107 m² vs 108 m² for successful ones). In 37 of 38 tested cases no roof plane lies inside the parcel returned by `/attrs`. |
+---
 
-After the first quote run 802 addresses had failed; 657 of them were replaced by other
-addresses of the same municipality that got a quote.
+## Canton dataset
+
+**78 addresses → 78 quotes (100%)**, 3 per canton. 4 addresses were replaced after server
+errors.
+
+<details>
+<summary><b>Scripts</b></summary>
+
+- `canton/get_address.py`: random points inside each canton's approximate bounding box
+  are checked against the GWR (`api3.geo.admin.ch` identify) until 3 single-family homes
+  with a plain house number are found.
+- `canton/get_solarrechner_quotes.py`: quotes every address; failures are retried, and
+  an address that still fails is replaced by a fresh random address in the same canton
+  (same address rules). `--retry` re-attempts only failed rows.
+- `canton/summary_csv.py`: writes the summary CSV.
+</details>
+
+---
+
+## Missing quotes
+
+The 145 municipality-level addresses without a quote all fail on Tachion's server:
+
+| Error | Addresses | What was checked |
+|---|---:|---|
+| 🌦️ Missing weather data (`readMeteodataFile`) | 133 | The missing file is `CH<PLZ>.met` for the address's postal code (20 postal codes); the server picks it from `attrs.plz4`. No address in these postal codes got a quote. 12 municipalities have only such a postal code (e.g. Yens, Brüttelen, Montfaucon); Les Enfers and Saint-Brais have no other homes left. |
+| 🧱 `buildingReport` error (`null` / NullPointerException) | 11 | All have no wall data in `/planes`; every such building tested failed (77 of 77). In Collonges VS no tested building has wall data (60 tried); the website gives no quote there either (1 address checked). |
+| 📐 `BUILDING_TOO_BIG` (`/planes`) | 1 | Not related to building size (median footprint 107 m² vs 108 m² for successful ones). In 37 of 38 tested cases no roof plane lies inside the parcel returned by `/attrs`. |
+
+---
 
 ## Output columns
 
 | Column | Meaning |
 |---|---|
-| `canton`, `municipality`, `bfs_code`, `address`, `plz`, `egid` | Sampled address (GWR) |
+| `canton`, `municipality`, `bfs_code`, `address`, `plz` | Sampled address (`bfs_code` in the municipality dataset only) |
 | `buildingGroundArea_sqm` | Building footprint from Tachion (QC) |
 | `grossInvest_CHF` | Investment incl. VAT for the PV system, without battery (*Investitionskosten Solar*) |
 | `subsidies_CHF` | One-time federal subsidy (*Kleine Einmalvergütung KLEIV*) |
-| `netInvest_CHF` | Gross investment minus KLEIV minus tax savings (*Nettoinvestition*) |
-| `paybackTime_years` | Payback period (*Amortisationsdauer*), depends on the residents through self-consumption |
+| `netInvest_CHF` | Gross investment − KLEIV − tax savings (*Nettoinvestition*) |
+| `paybackTime_years` | Payback period (*Amortisationsdauer*); depends on the residents through self-consumption |
 | `producedKwhYear_kWh` | Annual solar production (*Produzierter Solarstrom*) |
 | `selfConsumedKwhYear_kWh` | Self-consumed solar electricity per year |
 | `selfConsumptionPct_pct` | Self-consumption ratio (*Eigenverbrauchsanteil*) |
 | `gridFeedinKwhYear_kWh` | Electricity fed into the grid per year |
-| `error` | Server or request error, as returned (empty if the quote succeeded) |
 
-The full CSVs additionally have `roofPlanesFound` / `roofPlanesSelected` (roof planes
-after the tilt rule) and `raw_json` (attrs, parameters, cost analysis and energy results
-of the final request, plus `steep_roof_planes_off`: ids of the planes switched off by the
-75° rule).
+The full CSVs (`*_quotes.csv`) additionally have `egid`, `roofPlanesFound` /
+`roofPlanesSelected` (roof planes after the tilt rule), `error` (server or request error,
+empty if the quote succeeded) and `raw_json` (attrs, parameters, cost analysis and energy
+results of the final request, plus `steep_roof_planes_off`: ids of the planes switched off
+by the 75° rule).
+
+---
+
+## Repository structure
+
+```
+canton/
+├── get_address.py                          sample 3 homes per canton
+├── get_solarrechner_quotes.py              quotes (+ replacement within the canton)
+├── summary_csv.py                          summary CSV
+├── random_addresses.csv                    sampled addresses
+├── solarrechner_quotes.csv                 full results incl. raw_json
+└── solarrechner_quotes_summary.csv         summary
+municipality/
+├── build_municipality_list.py              1. municipality list (BFS)
+├── get_municipality_addresses.py           2. sample from the GWR bulk download
+├── get_municipality_quotes.py              3. quotes (resumable)
+├── replace_failed_municipality_addresses.py  4. replace failed addresses
+├── finalize_municipality_quotes.py         5. one row per address + summary CSV
+├── repair_quotes_csv.py                    utility: fix a CSV cut off by an interrupted run (--fix)
+├── all_municipalities.csv                  2,110 municipalities
+├── municipality_addresses.csv              sampled addresses (after replacement)
+└── municipality_quotes_summary.csv         summary
+```
+
+Not in the repository (gitignored, large or local): `municipality/municipality_quotes.csv`
+(full results with raw_json, ~460 MB), `municipality/municipality_quote_attempts.csv`
+(quote rows of replaced addresses), `municipality/gwr_cache/` (GWR downloads, ~0.9 GB).
+
+---
+
+<sub>Data sources: [SolarRechner](https://www.energieschweiz.ch/tools/solarrechner/) (EnergieSchweiz),
+[GWR](https://www.housing-stat.ch/) and [geo.admin.ch](https://api3.geo.admin.ch/) (federal geodata),
+[BFS municipality directory](https://www.agvchapp.bfs.admin.ch/).</sub>
