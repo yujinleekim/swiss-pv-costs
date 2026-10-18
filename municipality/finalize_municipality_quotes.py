@@ -4,20 +4,28 @@ Finalize municipality_quotes.csv:
      attempt from an earlier pass and a successful one from a later
      retry), keep the successful one. If all rows for an egid failed,
      keep just one (the most recent).
+     Only addresses still listed in municipality_addresses.csv are kept, so
+     addresses swapped out by replace_failed_municipality_addresses.py drop out.
+     Every row that is not kept is appended to municipality_quote_attempts.csv, so the
+     replacement script still knows which candidates were already tried.
   2. Print a breakdown of remaining errors by type, so the final error
      count has a clear "why", not just a number.
 
 Overwrites municipality_quotes.csv with the deduped version, and also
 writes a smaller Excel-friendly summary (no raw_json) the same way
-misc/summary_csv.py did for the canton-level dataset.
+canton/summary_csv.py does for the canton-level dataset.
 """
 
 import csv
 import os
 import re
 
+csv.field_size_limit(2**31 - 1)  # raw_json fields can exceed the 131072 default
+
 _HERE = os.path.dirname(os.path.abspath(__file__))
 INFILE = os.path.join(_HERE, "municipality_quotes.csv")
+ADDRESSES_FILE = os.path.join(_HERE, "municipality_addresses.csv")
+ATTEMPTS_FILE = os.path.join(_HERE, "municipality_quote_attempts.csv")
 SUMMARY_OUTFILE = os.path.join(_HERE, "municipality_quotes_summary.csv")
 
 SUMMARY_COLUMNS = [
@@ -27,10 +35,16 @@ SUMMARY_COLUMNS = [
     "producedKwhYear_kWh", "selfConsumedKwhYear_kWh", "selfConsumptionPct_pct", "gridFeedinKwhYear_kWh",
 ]
 
+# "BUILDING_TOO_BIG" is Tachion's own code (/planes, Utils.getParcelBuilding()). Checked 2026-10-16:
+# the failing houses are normal-sized (median GWR footprint 107 m2 vs 108 m2 for successful ones),
+# and the website showed no result for the one address tested (Hauptstrasse 17, 8543 Gundetswil).
 ERROR_PATTERNS = [
-    ("Missing weather data (server-side, permanent)", "readMeteodataFile"),
-    ("Ran out of BUILDING_TOO_BIG retries", "BUILDING_TOO_BIG"),
-    ("Opaque server error (null / NullPointerException)", r"buildingReport invalid:.*(null|NullPointerException)"),
+    ("Missing weather data for the postal code (server has no CH<PLZ>.met)", "readMeteodataFile"),
+    ("Server error in planes, code BUILDING_TOO_BIG (normal-sized houses, median 107 m2)",
+     "BUILDING_TOO_BIG"),
+    ("Opaque server error in buildingReport (null / NullPointerException)",
+     r"buildingReport invalid:.*(null|NullPointerException)"),
+    ("Opaque server error in attrs", r"attrs invalid"),
     ("Geocoding/GWR lookup failed", r"No geocoding match|No GWR record"),
 ]
 
@@ -50,9 +64,15 @@ def main():
     fieldnames = list(rows[0].keys())
     print(f"Loaded {len(rows)} raw rows from {INFILE}")
 
+    with open(ADDRESSES_FILE, newline="", encoding="utf-8-sig") as f:
+        address_egids = [r["egid"] for r in csv.DictReader(f)]
+    listed = set(address_egids)
+
     # dedupe by egid: prefer a successful row, else keep the last failed one
     best_by_egid = {}
     for row in rows:
+        if row["egid"] not in listed:
+            continue  # replaced by replace_failed_municipality_addresses.py
         egid = row["egid"]
         existing = best_by_egid.get(egid)
         if existing is None:
@@ -64,9 +84,12 @@ def main():
         else:
             best_by_egid[egid] = row  # both failed -- keep the more recent attempt
 
-    deduped = list(best_by_egid.values())
+    deduped = [best_by_egid[e] for e in address_egids if e in best_by_egid]  # address-file order
     print(f"After deduping by egid: {len(deduped)} unique addresses "
-          f"({len(rows) - len(deduped)} duplicate rows removed)")
+          f"({len(rows) - len(deduped)} duplicate / replaced rows removed)")
+    missing = len(address_egids) - len(deduped)
+    if missing:
+        print(f"WARNING: {missing} addresses have no quote row yet -- run get_municipality_quotes.py")
 
     successes = [r for r in deduped if not r.get("error")]
     failures = [r for r in deduped if r.get("error")]
@@ -85,9 +108,21 @@ def main():
         fully_failed = [(m, c) for m, c in muni_fail_counts.items() if c >= 8]
         if fully_failed:
             print(f"\n{len(fully_failed)} municipalities with 8+ failed addresses "
-                  f"(likely near-total coverage gaps, e.g. Wildberg-style):")
+                  f"(listed by count only):")
             for (canton, muni), count in sorted(fully_failed, key=lambda x: -x[1])[:20]:
                 print(f"  {canton} {muni}: {count} failed")
+
+    # keep the dropped rows (duplicates, replaced addresses) as attempt history
+    kept = {id(r) for r in deduped}
+    dropped = [r for r in rows if id(r) not in kept]
+    if dropped:
+        new_file = not os.path.exists(ATTEMPTS_FILE)
+        with open(ATTEMPTS_FILE, "a", newline="", encoding="utf-8-sig") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            if new_file:
+                writer.writeheader()
+            writer.writerows(dropped)
+        print(f"Appended {len(dropped)} dropped rows to {ATTEMPTS_FILE}")
 
     # rewrite the main file, deduped
     with open(INFILE, "w", newline="", encoding="utf-8-sig") as f:

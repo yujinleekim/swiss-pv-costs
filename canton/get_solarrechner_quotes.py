@@ -37,6 +37,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
 
+from get_address import has_plain_house_number  # same address rule as the sampler
+
 # ---- shared endpoints / constants --------------------------------------
 SEARCHSERVER = "https://api3.geo.admin.ch/rest/services/api/SearchServer"
 HEIGHT = "https://api3.geo.admin.ch/rest/services/height"
@@ -44,15 +46,18 @@ GWR_FIND = "https://api3.geo.admin.ch/rest/services/api/MapServer/find"
 GWR_IDENTIFY = "https://api3.geo.admin.ch/rest/services/api/MapServer/identify"
 GWR_LAYER = "ch.bfs.gebaeude_wohnungs_register"
 
-TACHION_PLANES = "https://tachionframework.ch/tachionserver/resources/sim/planes"
-TACHION_BUILDING_REPORT = "https://tachionframework.ch/tachionserver/resources/sim/buildingReport"
+TACHION_ATTRS = "https://tachionframework.com/tachionserver/resources/sim/attrs"
+TACHION_PLANES = "https://tachionframework.com/tachionserver/resources/sim/planes"
+TACHION_BUILDING_REPORT = "https://tachionframework.com/tachionserver/resources/sim/buildingReport"
+# Fixed scenario for all quotes: "Bewohner im Haus" = 4, no facade (wall) planes and no roof planes
+# tilted MAX_ROOF_TILT or more (wall-like surfaces, where panels are rarely installed).
+# The website sends user-changed fields as signature.input [{paramName, value}].
+OCCUPANT_NUMBER = "4"
+# 75 = the threshold of the federal tilt bonus (EnFV, "Neigungswinkel von mindestens 75 Grad");
+# in our tests Tachion's separate pvModuleSteep cost appeared from 75 deg on, never at 72 or less.
+MAX_ROOF_TILT = 75
 TACHION_API_KEY = "3xs8-51ua-9ky5"
 
-DEFAULT_ELECTRIC_TARIFF = [
-    ["120.00", "0.2577", "0.2483", "0.00000"],
-    ["0.00000", "0.08440", "0.08440", "3000.00"],
-]
-DEFAULT_ELECTRICITY_PROVIDER = "454"
 GKLAS_EINFAMILIENHAUS = "1110"
 GSTAT_EXISTING = "1004"
 
@@ -161,6 +166,8 @@ def find_one_random_address(canton_code, excluded_egids, max_attempts=150):
                 continue
             if str(attrs.get("gstat")) != GSTAT_EXISTING:
                 continue
+            if not has_plain_house_number(attrs.get("strname_deinr", "")):
+                continue
             return {
                 "canton": canton_code,
                 "address": attrs.get("strname_deinr", ""),
@@ -172,33 +179,56 @@ def find_one_random_address(canton_code, excluded_egids, max_attempts=150):
 
 
 # ---- Tachion request building / cost extraction -------------------------
-def build_planes_request(address_text):
-    geo = geocode_address(address_text)
-    egid = geo["featureId"].split("_")[0]
-    gwr = gwr_lookup_by_egid(egid)
-    x, y = geo["x"], geo["y"]
-    z = get_elevation(x, y)
-    x_f, y_f = float(x), float(y)
-    street, num = parse_street_and_number(address_text)
+def build_planes_request(address_text, parcel_half=None):
+    """Build the /planes request the same way the SolarRechner website does.
 
-    half = 30  # metres -- approximate parcel box (no public nationwide cadastral API)
-    parcel = [
-        [str(y_f - half), str(x_f - half)], [str(y_f + half), str(x_f - half)],
-        [str(y_f + half), str(x_f + half)], [str(y_f - half), str(x_f + half)],
-        [str(y_f - half), str(x_f - half)],
-    ]
-    attrs = {
-        "bbox": [str(y_f - half), str(x_f - half), str(y_f + half), str(x_f + half)],
-        "bfsNumber": str(gwr.get("ggdenr", "")), "canton": gwr.get("gdekt", ""), "country": "CH",
-        "detail": geo.get("detail", ""), "electricTariff": DEFAULT_ELECTRIC_TARIFF,
-        "electricityProvider": DEFAULT_ELECTRICITY_PROVIDER, "featureId": geo["featureId"],
-        "gdename": gwr.get("ggdename", ""), "geom_st_box2d": geo.get("geom_st_box2d", ""),
-        "label": geo.get("label", ""), "lat": str(geo.get("lat", "")), "lon": str(geo.get("lon", "")),
-        "num": num or geo.get("num", ""), "numAddOn": "", "origin": "address", "parcel": parcel,
-        "plz4": str(gwr.get("dplz4", "")), "strname1": street, "x": str(x), "y": str(y), "z": str(z),
-        "zip": str(gwr.get("dplz4", "")),
-    }
-    return {"apiKey": TACHION_API_KEY, "signature": {"request": "603", "event": "planes"}, "attrs": attrs}
+    1. Geocode the address (federal geoportal SearchServer) to get featureId/label/num.
+    2. Ask Tachion's own /attrs endpoint to fill in everything else: parcel polygon,
+       elevation, coordinates, electricity provider and tariff. The website does exactly
+       this, so the numbers match what a person sees on the website.
+    3. Send the returned attrs unchanged to /planes.
+
+    `parcel_half` is ignored (kept only so older callers don't break): the parcel now
+    comes from Tachion instead of an approximate box.
+    """
+    geo = geocode_address(address_text)
+    detail = re.sub(r"<[^>]+>", "", geo.get("label", "")).strip()
+    num = geo.get("num") or parse_street_and_number(address_text)[1]
+    r = requests.post(TACHION_ATTRS, json={
+        "apiKey": TACHION_API_KEY,
+        "signature": {"request": "603", "event": "attrs"},
+        "attrs": {"detail": detail, "num": num, "featureId": geo["featureId"]},
+    }, timeout=REQUEST_TIMEOUT)
+    r.raise_for_status()
+    resp = r.json()
+    if not resp.get("valid"):
+        # RequestException so the caller retries it like any other transient failure
+        raise requests.RequestException(f"attrs invalid: {resp.get('errorMessageForUser')}")
+    return {"apiKey": TACHION_API_KEY, "signature": {"request": "603", "event": "planes"},
+            "attrs": resp["attrs"]}
+
+
+def switch_off_walls(walls):
+    """All facade planes off. Some buildings have wall=null: sent unchanged
+    (wall=[] makes /buildingReport return a 500)."""
+    return [dict(w, selected="false") if w else w for w in walls] if walls else walls
+
+
+def roof_tilt(plane):
+    return float(((plane.get("feature") or {}).get("attributes") or {}).get("neigung") or 0)
+
+
+def switch_off_steep_roofs(roofs):
+    """Roof planes tilted MAX_ROOF_TILT or more off. Returns (roof list, ids switched off)."""
+    if not roofs:
+        return roofs, []
+    out, off = [], []
+    for p in roofs:
+        if p and p.get("selected") == "true" and roof_tilt(p) >= MAX_ROOF_TILT:
+            off.append(((p.get("feature") or {}).get("attributes") or {}).get("id"))
+            p = dict(p, selected="false")
+        out.append(p)
+    return out, off
 
 
 def find_cost_component(node, target_name):
@@ -233,29 +263,52 @@ def get_quote_for_row(row):
                 time.sleep(1 + attempt)
                 continue
 
-            report_payload = {
+            # Same two requests as the website (checked against the website on 2026-10-17:
+            # Steingasse 10 Hoechstetten 23,600, Bodenstrasse 17 Russikon 24,200, Brunngasse 10
+            # Kleinandelfingen 41,600 CHF):
+            # 1. SOLAR_OPT with the planes exactly as /planes returned them (the website's first result);
+            # 2. no state, with the planes from response 1 where facade and steep roof planes are switched
+            #    off, and the number of residents in signature.input (what a user changes on the site).
+            r2 = requests.post(TACHION_BUILDING_REPORT, json={
                 "apiKey": TACHION_API_KEY,
                 "signature": {"request": "603", "event": "buildingReport", "state": "SOLAR_OPT"},
                 "attrs": planes_resp["attrs"], "roof": planes_resp.get("roof", []),
                 "wall": planes_resp.get("wall", []),
-            }
-            r2 = requests.post(TACHION_BUILDING_REPORT, json=report_payload, timeout=REQUEST_TIMEOUT)
+            }, timeout=REQUEST_TIMEOUT)
             r2.raise_for_status()
             report = r2.json()
+            steep_off = []
+            if report.get("valid"):
+                final_roof, steep_off = switch_off_steep_roofs(report.get("roof"))
+                r2 = requests.post(TACHION_BUILDING_REPORT, json={
+                    "apiKey": TACHION_API_KEY,
+                    "signature": {"request": "603", "event": "buildingReport",
+                                  "input": [{"paramName": "occupantNumber", "value": OCCUPANT_NUMBER}]},
+                    "attrs": planes_resp["attrs"], "roof": final_roof,
+                    "wall": switch_off_walls(report.get("wall")),
+                }, timeout=REQUEST_TIMEOUT)
+                r2.raise_for_status()
+                report = r2.json()
 
             if not report.get("valid"):
                 last_error = f"buildingReport invalid: {report.get('errorMessageForUser')}"
                 time.sleep(1 + attempt)
                 continue
 
-            pv_all = find_cost_component(report.get("costAnalysis", {}), "pvModuleAll")
-            out["buildingGroundArea_sqm"] = planes_resp["attrs"].get("buildingGroundArea")
-            out["roofPlanesFound"] = len(planes_resp.get("roof", []))
-            out["roofPlanesSelected"] = sum(
-                1 for p in planes_resp.get("roof", []) if p.get("selected") == "true"
-            )
+            # Total PV cost as the website shows it: "pvModulePronovo" = pvModuleAll + pvModuleSteep
+            # (pvModuleSteep: cost of selected planes tilted 75 deg or more; 0 once those are off).
+            pv_all = find_cost_component(report.get("costAnalysis", {}), "pvModulePronovo")
             if not pv_all:
-                last_error = "pvModuleAll not found in costAnalysis"
+                pv_all = find_cost_component(report.get("costAnalysis", {}), "pvModuleAll")
+                if pv_all:
+                    print(f"    [warn] {row['municipality']} {row['address']}: pvModulePronovo missing, "
+                          f"fell back to pvModuleAll (may exclude facade modules)")
+            out["buildingGroundArea_sqm"] = planes_resp["attrs"].get("buildingGroundArea")
+            roof_list = [p for p in (final_roof or []) if p]
+            out["roofPlanesFound"] = len(roof_list)
+            out["roofPlanesSelected"] = sum(1 for p in roof_list if p.get("selected") == "true")
+            if not pv_all:
+                last_error = "pvModulePronovo/pvModuleAll not found in costAnalysis"
                 time.sleep(1 + attempt)
                 continue
 
@@ -276,6 +329,7 @@ def get_quote_for_row(row):
                 pass
             out["raw_json"] = json.dumps({
                 "planes_attrs": planes_resp.get("attrs"), "buildingReport_param": report.get("param"),
+                "steep_roof_planes_off": steep_off,
                 "buildingReport_costAnalysis": report.get("costAnalysis"),
                 "buildingReport_energySystem": report.get("energySystem"),
                 "buildingReport_pvSystem": report.get("pvSystem"),
@@ -425,7 +479,6 @@ def main():
     safe_write_csv(args.infile, ADDRESS_FIELDNAMES, address_rows)
 
     try:
-        import os
         os.remove(args.outfile + ".partial")
     except OSError:
         pass
