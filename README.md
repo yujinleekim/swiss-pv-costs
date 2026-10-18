@@ -87,8 +87,8 @@ The scripts send the same requests as the SolarRechner website (backend: Tachion
 
 | # | Request | What it does |
 |---|---|---|
-| 1 | `api3.geo.admin.ch` SearchServer | Geocode the address |
-| 2 | `/sim/attrs` | Parcel, coordinates, electricity provider and tariff |
+| 1 | `api3.geo.admin.ch` SearchServer | Geocode the address; use the hit for the sampled building (EGID), otherwise the address fails |
+| 2 | `/sim/attrs` | Parcel, coordinates, electricity provider and tariff; if it answers with another building (other EGID), the address fails |
 | 3 | `/sim/planes` | Roof and facade planes of the building |
 | 4 | `/sim/buildingReport`, `state: SOLAR_OPT` | Website's first result, on the planes as returned by step 3 |
 | 5 | `/sim/buildingReport`, no state | Planes from step 4 with facades and ≥ 75° roof planes off, `occupantNumber = 4` in `signature.input` |
@@ -148,7 +148,9 @@ steps). Below 10: Berken BE 8, Mauraz VD 8, Lavizzara TI 1, Cerentino TI 0.
 - Skips candidates in postal codes that had a missing-weather-data error.
 
 After the first quote run 802 addresses had failed; 657 were replaced by addresses of the
-same municipality that got a quote.
+same municipality that got a quote. A later check found 55 quotes (0.26%) made for another
+building than the sampled one: 37 were re-quoted for the sampled building, 18 were replaced
+(17 because `/attrs` answers with another building, 1 server error).
 </details>
 
 <details>
