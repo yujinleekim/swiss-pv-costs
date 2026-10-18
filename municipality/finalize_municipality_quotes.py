@@ -28,12 +28,21 @@ ADDRESSES_FILE = os.path.join(_HERE, "municipality_addresses.csv")
 ATTEMPTS_FILE = os.path.join(_HERE, "municipality_quote_attempts.csv")
 SUMMARY_OUTFILE = os.path.join(_HERE, "municipality_quotes_summary.csv")
 
-SUMMARY_COLUMNS = [
-    "canton", "municipality", "bfs_code", "address", "plz",
-    "buildingGroundArea_sqm",
-    "grossInvest_CHF", "subsidies_CHF", "netInvest_CHF", "paybackTime_years",
-    "producedKwhYear_kWh", "selfConsumedKwhYear_kWh", "selfConsumptionPct_pct", "gridFeedinKwhYear_kWh",
-]
+# Result columns in the order and with the names of the SolarRechner website: "Ergebnisse
+# Photovoltaik" panel (same API fields: Eac, suppliedOcn, ownConsumptionFraction, feedinCurrent,
+# grossInvest, subsidies, paybackTime) and "Nettoinvestition" from the cost dialog.
+WEBSITE_LABELS = {
+    "producedKwhYear_kWh": "Produzierter Solarstrom [kWh/Jahr]",
+    "selfConsumedKwhYear_kWh": "Solarstrom selber verbraucht [kWh/Jahr]",
+    "selfConsumptionPct_pct": "Eigenverbrauchsanteil [%]",
+    "gridFeedinKwhYear_kWh": "Solarstrom ans Netz abgegeben [kWh/Jahr]",
+    "grossInvest_CHF": "Kosten schlüsselfertige Anlage [CHF]",
+    "subsidies_CHF": "Kleine Einmalvergütung KLEIV [CHF]",
+    "netInvest_CHF": "Nettoinvestition [CHF]",
+    "paybackTime_years": "Amortisationsdauer der Anlage [Jahre]",
+}
+SUMMARY_COLUMNS = ["canton", "municipality", "bfs_code", "address", "plz", "buildingGroundArea_sqm",
+                   *WEBSITE_LABELS]
 
 # "BUILDING_TOO_BIG" is Tachion's own code (/planes, Utils.getParcelBuilding()). Checked 2026-10-16:
 # the failing houses are normal-sized (median GWR footprint 107 m2 vs 108 m2 for successful ones),
@@ -134,10 +143,10 @@ def main():
 
     # clean summary CSV, successes only, no raw_json
     with open(SUMMARY_OUTFILE, "w", newline="", encoding="utf-8-sig") as f:
-        writer = csv.DictWriter(f, fieldnames=SUMMARY_COLUMNS)
-        writer.writeheader()
+        writer = csv.writer(f)
+        writer.writerow([WEBSITE_LABELS.get(k, k) for k in SUMMARY_COLUMNS])
         for r in successes:
-            writer.writerow({k: r.get(k, "") for k in SUMMARY_COLUMNS})
+            writer.writerow([r.get(k, "") for k in SUMMARY_COLUMNS])
     print(f"Wrote {SUMMARY_OUTFILE} ({len(successes)} successful rows, no raw_json)")
 
 

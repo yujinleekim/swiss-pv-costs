@@ -196,8 +196,29 @@ The 145 municipality-level addresses without a quote all fail on Tachion's serve
 
 ## Output columns
 
-| Column | Meaning |
-|---|---|
+The summary CSVs use the names of the SolarRechner website ("Ergebnisse Photovoltaik"
+panel; *Nettoinvestition* from the cost dialog), in the website's order:
+
+| Column | Meaning | Full CSV name |
+|---|---|---|
+| `canton`, `municipality`, `bfs_code`, `address`, `plz` | Sampled address (`bfs_code` in the municipality dataset only) | same |
+| `buildingGroundArea_sqm` | Building footprint from Tachion (QC) | same |
+| `Produzierter Solarstrom [kWh/Jahr]` | Annual solar production | `producedKwhYear_kWh` |
+| `Solarstrom selber verbraucht [kWh/Jahr]` | Self-consumed solar electricity per year | `selfConsumedKwhYear_kWh` |
+| `Eigenverbrauchsanteil [%]` | Self-consumption ratio | `selfConsumptionPct_pct` |
+| `Solarstrom ans Netz abgegeben [kWh/Jahr]` | Electricity fed into the grid per year | `gridFeedinKwhYear_kWh` |
+| `Kosten schlüsselfertige Anlage [CHF]` | Investment incl. VAT for the PV system, without battery | `grossInvest_CHF` |
+| `Kleine Einmalvergütung KLEIV [CHF]` | One-time federal subsidy | `subsidies_CHF` |
+| `Nettoinvestition [CHF]` | Kosten − KLEIV − tax savings | `netInvest_CHF` |
+| `Amortisationsdauer der Anlage [Jahre]` | Payback period; depends on the residents through self-consumption | `paybackTime_years` |
+
+The full CSVs (`*_quotes.csv`) keep the short names in the right column, and additionally
+have `egid`, `roofPlanesFound` / `roofPlanesSelected` (roof planes after the tilt rule),
+`error` (server or request error, empty if the quote succeeded) and `raw_json` (attrs,
+parameters, cost analysis and energy results of the final request, plus
+`steep_roof_planes_off`: ids of the planes switched off by the 75° rule).
+
+---|---|
 | `canton`, `municipality`, `bfs_code`, `address`, `plz` | Sampled address (`bfs_code` in the municipality dataset only) |
 | `buildingGroundArea_sqm` | Building footprint from Tachion (QC) |
 | `grossInvest_CHF` | Investment incl. VAT for the PV system, without battery (*Investitionskosten Solar*) |
