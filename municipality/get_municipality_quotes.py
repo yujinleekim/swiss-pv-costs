@@ -69,7 +69,10 @@ MAX_RETRIES = 3
 SESSION = requests.Session()  # connection reuse instead of a fresh connection per call
 
 
-def geocode_address(address_text):
+def geocode_address(address_text, egid=None):
+    """First geocoder hit, or -- if `egid` is given -- the hit for that building
+    (featureId = "<EGID>_<entrance>"). No hit for the EGID raises ValueError, so a quote
+    is never made for a different building than the sampled one."""
     r = SESSION.get(SEARCHSERVER, params={
         "type": "locations", "origins": "address", "searchText": address_text,
     }, timeout=15)
@@ -77,7 +80,12 @@ def geocode_address(address_text):
     results = r.json().get("results", [])
     if not results:
         raise ValueError(f"No geocoding match for: {address_text}")
-    return results[0]["attrs"]
+    if not egid:
+        return results[0]["attrs"]
+    for res in results:
+        if str(res["attrs"].get("featureId", "")).split("_")[0] == str(egid):
+            return res["attrs"]
+    raise ValueError(f"No geocoding match for EGID {egid}: {address_text}")
 
 
 def gwr_lookup_by_egid(egid):
@@ -106,7 +114,7 @@ def parse_street_and_number(address_text):
     return street_part, ""
 
 
-def build_planes_request(address_text, parcel_half=None):
+def build_planes_request(address_text, parcel_half=None, egid=None):
     """Build the /planes request the same way the SolarRechner website does.
 
     1. Geocode the address (federal geoportal SearchServer) to get featureId/label/num.
@@ -118,7 +126,7 @@ def build_planes_request(address_text, parcel_half=None):
     `parcel_half` is ignored (kept only so older callers don't break): the parcel now
     comes from Tachion instead of an approximate box.
     """
-    geo = geocode_address(address_text)
+    geo = geocode_address(address_text, egid)
     detail = re.sub(r"<[^>]+>", "", geo.get("label", "")).strip()
     num = geo.get("num") or parse_street_and_number(address_text)[1]
     r = SESSION.post(TACHION_ATTRS, json={
@@ -131,6 +139,11 @@ def build_planes_request(address_text, parcel_half=None):
     if not resp.get("valid"):
         # RequestException so the caller retries it like any other transient failure
         raise requests.RequestException(f"attrs invalid: {resp.get('errorMessageForUser')}")
+    # /attrs sometimes answers with another building (other EGID, sometimes another house number);
+    # the website sends the same request, so the sampled building cannot be quoted
+    returned = str(resp["attrs"].get("featureId", ""))
+    if egid and returned.split("_")[0] != str(egid):
+        raise ValueError(f"/attrs returned another building (featureId {returned}) for EGID {egid}")
     return {"apiKey": TACHION_API_KEY, "signature": {"request": "603", "event": "planes"},
             "attrs": resp["attrs"]}
 
@@ -177,7 +190,7 @@ def get_quote_for_row(row):
 
     for attempt in range(MAX_RETRIES + 1):
         try:
-            payload = build_planes_request(address_text)
+            payload = build_planes_request(address_text, egid=row.get("egid"))
             r = SESSION.post(TACHION_PLANES, json=payload, timeout=REQUEST_TIMEOUT)
             r.raise_for_status()
             planes_resp = r.json()

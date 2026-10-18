@@ -46,6 +46,7 @@ ERROR_PATTERNS = [
      r"buildingReport invalid:.*(null|NullPointerException)"),
     ("Opaque server error in attrs", r"attrs invalid"),
     ("Geocoding/GWR lookup failed", r"No geocoding match|No GWR record"),
+    ("Tachion /attrs returned another building", r"/attrs returned another building"),
 ]
 
 

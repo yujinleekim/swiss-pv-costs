@@ -691,7 +691,7 @@ ZH,Kilchberg (ZH),135,Claridenstrasse 1,8802,56725
 ZH,Kilchberg (ZH),135,Bächlerweg 13,8802,3135280
 ZH,Rüschlikon,139,Glärnischstrasse 4,8803,61995
 ZH,Rüschlikon,139,Seestrasse 64,8803,61341
-ZH,Rüschlikon,139,Im Rührets 8,8803,62091
+ZH,Rüschlikon,139,Sihlhaldenstrasse 10,8803,200294266
 ZH,Rüschlikon,139,Alemannenweg 31,8803,61610
 ZH,Rüschlikon,139,Säumerstrasse 39,8803,61832
 ZH,Rüschlikon,139,Rebbergstrasse 10,8803,201007071
@@ -4644,7 +4644,7 @@ BE,Spiez,768,Thunstrasse 28,3700,190168834
 BE,Spiez,768,Ringstrasse 7,3700,1394807
 BE,Spiez,768,Schachenstrasse 32,3700,1394585
 BE,Spiez,768,Breitenweg 4,3700,3118806
-BE,Spiez,768,Gwattstutz 6,3645,1393490
+BE,Spiez,768,Stutzstrasse 13,3702,1395677
 BE,Spiez,768,Aeschiweg 14,3700,1395667
 BE,Spiez,768,Kummliweg 42,3705,1395887
 BE,Wimmis,769,Schindelfeldweg 42,3752,1396555
@@ -10260,7 +10260,7 @@ SG,Bütschwil-Ganterschwil,3395,Bleiken 272,9608,1053628
 SG,Neckertal,3396,Hofstettli 1,9633,1734227
 SG,Neckertal,3396,Oberstofel 428,9127,1045365
 SG,Neckertal,3396,Neudicken 182,9115,1045533
-SG,Neckertal,3396,Löchli 1,9633,1734382
+SG,Neckertal,3396,Bomenstrasse 29,9633,1734324
 SG,Neckertal,3396,Degersheimerstrasse 41,9115,1054979
 SG,Neckertal,3396,Höhg 500,9621,1044954
 SG,Neckertal,3396,Sonnmatt 79,9122,1054735
@@ -10482,7 +10482,7 @@ SG,Sennwald,3274,Haagerstrasse 40,9465,1722148
 SG,Sennwald,3274,Wingertstrasse 6,9465,1722069
 SG,Sennwald,3274,Ochsenhag 9,9466,1721895
 SG,Sennwald,3274,Rüteli 4,9467,1722295
-SG,Sennwald,3274,Fichtenstrasse 1,9469,1722481
+SG,Sennwald,3274,Rofisbach 9,9468,1722666
 SG,Sennwald,3274,Amalerva 15,9467,1722367
 SG,Sennwald,3274,Oberdorfstrasse 9,9465,1722154
 SG,Sennwald,3274,Eschagger 3,9468,1722714
@@ -12452,7 +12452,7 @@ AG,Boswil,4228,Alte Muristrasse 34,5623,101249384
 AG,Boswil,4228,Schlosserweg 5,5623,599982
 AG,Boswil,4228,Ringstrasse 8,5623,600214
 AG,Boswil,4228,Sarbachstrasse 3,5623,600101
-AG,Boswil,4228,Rosenweg 10,5623,600135
+AG,Boswil,4228,Ritziziel 21,5623,190228690
 AG,Boswil,4228,Rigiweg 8,5623,263028080
 AG,Boswil,4228,Weissenbachstrasse 7,5623,599970
 AG,Boswil,4228,Breite 3,5623,600114
@@ -12558,7 +12558,7 @@ AG,Sins,4239,Reussegg 20,5643,263091946
 AG,Sins,4239,Kellengasse 33,5643,3097445
 AG,Sins,4239,Küttig 5,5645,604003
 AG,Merenschwand,4234,Bündten 28,5634,2710234
-AG,Merenschwand,4234,Burgstrasse 2,5634,2710082
+AG,Merenschwand,4234,Erlenmoosstrasse 12,5636,101563841
 AG,Merenschwand,4234,Ringstrasse 10,5634,601189
 AG,Merenschwand,4234,Siebeneichenstrasse 11,5634,2702658
 AG,Merenschwand,4234,Chilefeldstrasse 33,5634,601350
@@ -14387,7 +14387,7 @@ TG,Fischingen,4726,Hagenbachstrasse 14,8374,669226
 TG,Fischingen,4726,Tanneggerstrasse 14,8374,669110
 TG,Fischingen,4726,Aumühlestrasse 28,8374,669364
 TG,Fischingen,4726,Mettlen 4,8376,190629028
-TG,Bettwiesen,4716,Bahnhofstrasse 3,9553,191574735
+TG,Bettwiesen,4716,Hauptstrasse 16,9553,669425
 TG,Bettwiesen,4716,Neustocken 11,9553,669545
 TG,Bettwiesen,4716,Hauptstrasse 53,9553,669584
 TG,Bettwiesen,4716,Stägenacker 25,9553,2754142
@@ -15383,7 +15383,7 @@ TI,Cugnasco-Gerra,5138,Via Agarone 51,6597,11222742
 TI,Cugnasco-Gerra,5138,Via Medoscio 19,6597,400076544
 TI,Cugnasco-Gerra,5138,Sentee Fontanèd 11,6597,11191618
 TI,Cugnasco-Gerra,5138,Via Rèsega 14,6516,11120852
-TI,Cugnasco-Gerra,5138,Via Agarone 14,6597,11120989
+TI,Cugnasco-Gerra,5138,Via Sciarana 58,6516,11222419
 TI,Cugnasco-Gerra,5138,Via Mitala 27,6597,11222336
 TI,Cugnasco-Gerra,5138,Sentiero Gudo 4,6516,11120547
 TI,Cugnasco-Gerra,5138,Via Locarno 134,6516,190213544
@@ -16028,7 +16028,7 @@ VD,Trey,5827,Impasse de la Forge 17,1552,3175190
 VD,Trey,5827,Les Marais 2,1552,825639
 VD,Trey,5827,Route des deux Villages 6,1552,825621
 VD,Trey,5827,Route de Payerne 11,1552,825595
-VD,Treytorrens (Payerne),5828,Chemin des Molliettes 3,1538,825688
+VD,Treytorrens (Payerne),5828,Route du Moulin 16,1538,280008614
 VD,Treytorrens (Payerne),5828,Chemin du Château 6,1538,825681
 VD,Treytorrens (Payerne),5828,Route de la Gaîté 4,1538,825662
 VD,Treytorrens (Payerne),5828,La Ruelle 1,1538,825679
@@ -17323,8 +17323,8 @@ VD,Saint-Saphorin (Lavaux),5610,Chemin du Bois-Jaccoud 22,1071,792566
 VD,Saint-Saphorin (Lavaux),5610,Chemin de Coumont 24,1071,792552
 VD,Saint-Saphorin (Lavaux),5610,Route du Lac 23,1071,792525
 VD,Saint-Saphorin (Lavaux),5610,Chemin de Coumont 18,1071,280077652
-VD,Saint-Saphorin (Lavaux),5610,Passage de l'Onde 3,1071,792500
-VD,Saint-Saphorin (Lavaux),5610,Ruelle J.-Villard-Gilles 2,1071,792476
+VD,Saint-Saphorin (Lavaux),5610,Chemin du Rocher 5,1071,101090258
+VD,Saint-Saphorin (Lavaux),5610,Chemin de Mont-de-Plan 38,1071,3162981
 VD,Saint-Saphorin (Lavaux),5610,Chemin Neuf 8,1071,792513
 VD,Saint-Saphorin (Lavaux),5610,Chemin du Chapon 6,1071,792485
 VD,Saint-Saphorin (Lavaux),5610,Escalier du Chevet-du-Temple 10,1071,792510
@@ -17364,8 +17364,8 @@ VD,Forel (Lavaux),5604,Chemin des Cases 18,1072,789628
 VD,Forel (Lavaux),5604,Route de Moudon 9,1072,789392
 VD,Forel (Lavaux),5604,Chemin de Chatelan 5,1072,101089715
 VD,Forel (Lavaux),5604,Chemin de la Chercotte 36,1072,789560
-VD,Forel (Lavaux),5604,Chemin de Chatelan 3,1072,101089719
-VD,Forel (Lavaux),5604,Chemin de Mau Paccot 3,1072,789410
+VD,Forel (Lavaux),5604,Chemin du Pré de l'Essert 5,1072,101089707
+VD,Forel (Lavaux),5604,Chemin En Forel 2,1072,789673
 VD,Forel (Lavaux),5604,Route des Cullayes 13,1072,789375
 VD,Forel (Lavaux),5604,Chemin des Carboles 8,1072,789536
 VD,Belmont-sur-Lausanne,5581,Chemin du Plan 19,1092,874450
@@ -17555,9 +17555,9 @@ VD,La Chaux (Cossonay),5474,Rue du Village 11,1308,3180791
 VD,La Chaux (Cossonay),5474,Rue de l'Eglise 7,1308,862778
 VD,La Chaux (Cossonay),5474,La Place 7,1308,862767
 VD,La Chaux (Cossonay),5474,Rue de la Millière 11,1308,280101467
-VD,La Chaux (Cossonay),5474,Rue des Italiens 2,1308,3180805
+VD,La Chaux (Cossonay),5474,Chemin du Moulin 1,1308,280062139
 VD,La Chaux (Cossonay),5474,Rue du Village 14,1308,9019478
-VD,La Chaux (Cossonay),5474,Chemin du Moulin 2,1308,862802
+VD,La Chaux (Cossonay),5474,Rue du Château 6,1308,862786
 VD,L'Isle,5486,Rue du Château 16,1148,864260
 VD,L'Isle,5486,Rue de la Chargeaulaz 2,1148,864230
 VD,L'Isle,5486,Route des Biolles 11,1148,864085
@@ -18981,7 +18981,7 @@ VS,Ayent,6082,Rue des Sources 2,1972,909155
 VS,Ayent,6082,Route des Chênes 72,1966,190720569
 VS,Ayent,6082,Route d'Anzère 104,1972,190056055
 VS,Ayent,6082,Route d'Anzère 4,1966,3129546
-VS,Ayent,6082,Route de Blignou 54,1966,190056492
+VS,Ayent,6082,Route des Chênes 64,1966,3129554
 VS,Ayent,6082,Route des Frisses 26,1966,190185043
 VS,Ayent,6082,Route de Lényre 53,1966,908489
 VS,Ayent,6082,Route de Luc 81,1966,909054
@@ -19683,7 +19683,7 @@ VS,Sion,6266,Rue de la Cotsette 30,1950,191150793
 VS,Sion,6266,Chemin du Puits 4,1958,952623
 VS,Sion,6266,Route de la Drague 15,1950,953434
 VS,Sion,6266,Chemin des Cerisiers 2,1967,952873
-VS,Sion,6266,Rue des Platanes 12,1950,954619
+VS,Sion,6266,Rue du Vieux-Moulin 23,1950,953925
 VS,Sion,6266,Rue de la Dixence 72,1950,953283
 VS,Sion,6266,Route des Mayens de Sion 7,1992,908247
 VS,Zermatt,6300,Egge 41,3920,191614511
@@ -20233,7 +20233,7 @@ GE,Chancy,6611,Chemin des Lys 25,1284,295129875
 GE,Chancy,6611,Route de Passeiry 52,1284,1004255
 GE,Chancy,6611,Chemin des Raclerets 22,1284,1004219
 GE,Chancy,6611,Chemin du Clédal 8,1284,1004260
-GE,Chancy,6611,Chemin du Cannelet 22,1285,1004268
+GE,Chancy,6611,Chemin des Bouveries 37,1284,1004129
 GE,Chancy,6611,Chemin des Carrés 11,1284,295117668
 GE,Chancy,6611,Route de Valleiry 6,1284,295030105
 GE,Chêne-Bourg,6613,Avenue de Bel-Air 50,1225,1006025
