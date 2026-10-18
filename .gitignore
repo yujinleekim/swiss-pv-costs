@@ -1,1 +1,9 @@
 municipality/municipality_quotes.csv
+__pycache__/
+*.bak
+*.har
+municipality/gwr_cache/
+municipality/municipality_quote_attempts.csv
+*.tmp
+*.partial
+CLAUDE.md

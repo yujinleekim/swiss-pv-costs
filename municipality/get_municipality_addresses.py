@@ -2,239 +2,223 @@
 National municipality-level address sampler -- 10 random single-family
 homes per municipality, for all 2,110 Swiss municipalities.
 
-Builds on everything validated on the Obwalden test:
-  - each municipality's own boundary bbox (swissBOUNDARIES3D, exact match,
-    current-year filtered with a fallback to highest 'jahr' if the flag
-    is ever missing from a response)
-  - random-point sampling within that bbox, checked against the GWR
-    building registry (single-family homes only: GKLAS 1110, GSTAT 1004)
+Samples directly from the federal building register (GWR) public bulk download
+(https://public.madd.bfs.admin.ch/<canton>.zip; the sample of 2026-10-15 used the export of that day):
+  1. Download each canton's GWR zip once (cached in gwr_cache/, gitignored).
+  2. Eligible buildings: single-family home (GKLAS 1110), existing (GSTAT 1004),
+     with a street address whose house number is plain numeric
+     (5 -- not 5a, 30.1, 714a.99: those are usually extra buildings on the same plot).
+     DOFFADR (official address flag) is NOT used: many cantons leave it empty, and
+     whole alpine municipalities have 0 there for ordinary street addresses.
+  3. Per municipality (GGDENR = bfs_code), shuffle the eligible buildings with a
+     fixed seed and take the first 10, at most MAX_PER_STREET per street.
+  4. Only for municipalities that still have fewer than 10, fill up in two steps:
+     a. ignore MAX_PER_STREET (small villages with 1-3 streets);
+     b. allow letter-suffixed numbers (5a), but at most one building per base address
+        (street + leading number), so 5 / 5a / 5b are never sampled together.
+        Dotted numbers (30.1, 714a.99) stay excluded: the TI ones all fail at
+        Tachion /attrs (tested 2026-10-15, Lavizzara / Cerentino).
+     Municipalities with 10 strict picks are not affected by these steps.
 
-NEW AT THIS SCALE: checkpointing. This run is large enough that it WILL
-likely get interrupted at some point. Progress is written incrementally
-(one line per completed municipality, flushed immediately) rather than
-held in memory until the end, and on restart, municipalities already
-completed are skipped.
+Every eligible single-family home has the same chance of being picked (the earlier
+random-point method favoured isolated houses and needed hundreds of API calls for
+sparse municipalities). Municipalities with fewer than 10 homes even after step 4
+get all of them.
 
 INPUT:  all_municipalities.csv  (from build_municipality_list.py)
-OUTPUT: municipality_addresses.csv  (append-only, safe to resume)
+OUTPUT: municipality_addresses.csv  (overwritten)
 
 USAGE:
-  python get_municipality_addresses.py                 # start / resume
-  python get_municipality_addresses.py --workers 20     # tune concurrency
+  python get_municipality_addresses.py              # all cantons, seed 42
+  python get_municipality_addresses.py --seed 7
 """
 
 import argparse
 import csv
+import io
 import os
 import random
-import time
-import requests
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import re
+import zipfile
+from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 
-FIND_URL = "https://api3.geo.admin.ch/rest/services/api/MapServer/find"
-GEMEINDE_LAYER = "ch.swisstopo.swissboundaries3d-gemeinde-flaeche.fill"
-GWR_IDENTIFY = "https://api3.geo.admin.ch/rest/services/api/MapServer/identify"
-GWR_LAYER = "ch.bfs.gebaeude_wohnungs_register"
+import requests
+
+GWR_ZIP_URL = "https://public.madd.bfs.admin.ch/{canton}.zip"
 GKLAS_EINFAMILIENHAUS = "1110"
 GSTAT_EXISTING = "1004"
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 INFILE = os.path.join(_HERE, "all_municipalities.csv")
 OUTFILE = os.path.join(_HERE, "municipality_addresses.csv")
+CACHE_DIR = os.path.join(_HERE, "gwr_cache")
 OUTPUT_FIELDNAMES = ["canton", "municipality", "bfs_code", "address", "plz", "egid"]
 
 TARGET_PER_MUNICIPALITY = 10
-MAX_ATTEMPTS_PER_MUNICIPALITY = 600
-DEFAULT_WORKERS = 12   # the earlier slowdown wasn't actually about worker count
-                        # (see fetch_municipality_bbox) -- back to a faster default
+MAX_PER_STREET = 2     # at most this many sampled houses on the same street (avoids one housing estate
+                       # filling the whole municipality)
+DEFAULT_SEED = 42
+
+PLAIN_HOUSE_NO = re.compile(r"\d+")
+LEADING_NUMBER = re.compile(r"\d+")
+LETTER_SUFFIX_NO = re.compile(r"\d+[A-Za-z]+")
 
 
-def fetch_municipality_bbox(name: str, retries: int = 4):
-    """Returns just the bbox. Canton is no longer sourced here -- the
-    boundary layer's 'kanton' attribute turned out to be consistently
-    missing for a large batch of municipalities (not flaky, genuinely
-    absent), so canton is now taken from the GWR identify() results
-    themselves during sampling instead (see sample_municipality)."""
-    last_exc = None
-    for attempt in range(retries):
-        try:
-            r = requests.get(FIND_URL, params={
-                "layer": GEMEINDE_LAYER, "searchField": "gemname", "searchText": name,
-                "contains": "false",
-                "returnGeometry": "true",
-                "geometryFormat": "geojson",
-                "sr": "2056",
-            }, timeout=15)
-            r.raise_for_status()
-            all_results = r.json().get("results", [])
-
-            current = [res for res in all_results if res.get("attributes", {}).get("is_current_jahr")]
-            chosen = current[0] if current else (
-                max(all_results, key=lambda res: res.get("attributes", {}).get("jahr") or 0)
-                if all_results else None
-            )
-            if chosen:
-                return chosen["bbox"]
-            last_exc = ValueError(f"No boundary results at all for: {name}")
-        except requests.RequestException as exc:
-            last_exc = exc
-        time.sleep(1 + attempt)
-    raise ValueError(f"Could not get a boundary for '{name}' after {retries} attempts: {last_exc}")
+def download_canton_zip(canton):
+    """Download <canton>.zip into CACHE_DIR unless it is already there."""
+    path = os.path.join(CACHE_DIR, f"{canton.lower()}.zip")
+    if os.path.exists(path):
+        return path
+    tmp = path + ".part"
+    with requests.get(GWR_ZIP_URL.format(canton=canton.lower()), stream=True, timeout=60) as r:
+        r.raise_for_status()
+        with open(tmp, "wb") as f:
+            for chunk in r.iter_content(1 << 20):
+                f.write(chunk)
+    os.replace(tmp, path)
+    print(f"  downloaded {canton} ({os.path.getsize(path) / 1e6:.0f} MB)")
+    return path
 
 
-def identify_building(easting, northing, tolerance=150):
-    params = {
-        "geometryType": "esriGeometryPoint", "geometry": f"{easting},{northing}",
-        "imageDisplay": "500,600,96",
-        "mapExtent": f"{easting-500},{northing-500},{easting+500},{northing+500}",
-        "tolerance": tolerance, "layers": f"all:{GWR_LAYER}", "returnGeometry": "false",
-        "sr": "2056",
-    }
-    r = requests.get(GWR_IDENTIFY, params=params, timeout=15)
-    r.raise_for_status()
-    return r.json().get("results", [])
+def read_tsv(zf, name):
+    with zf.open(name) as f:
+        yield from csv.DictReader(io.TextIOWrapper(f, encoding="utf-8"), delimiter="\t")
 
 
-def sample_municipality(muni_name: str, bfs_code: str, n: int):
-    try:
-        min_e, min_n, max_e, max_n = fetch_municipality_bbox(muni_name)
-    except ValueError as exc:
-        return [], 0, str(exc)
+def eligible_homes(zip_path):
+    """Eligible single-family homes in one canton zip, grouped by bfs_code (GGDENR)."""
+    with zipfile.ZipFile(zip_path) as zf:
+        buildings = {
+            b["EGID"]: b for b in read_tsv(zf, "gebaeude_batiment_edificio.csv")
+            if b["GKLAS"] == GKLAS_EINFAMILIENHAUS and b["GSTAT"] == GSTAT_EXISTING
+        }
+        entrances = defaultdict(list)
+        for e in read_tsv(zf, "eingang_entree_entrata.csv"):
+            # house number must start with a digit (plain "5", or suffixed "5a" / "30.1" for step 4b)
+            if e["EGID"] in buildings and e["STRNAME"] and LEADING_NUMBER.match(e["DEINR"]):
+                entrances[e["EGID"]].append(e)
 
-    found = []
-    seen_egids = set()
-    attempts = 0
-    discovered_canton = None  # taken from the first real building match, not the boundary API
+    by_municipality = defaultdict(list)
+    for egid, ents in entrances.items():
+        b = buildings[egid]
+        plain = [x for x in ents if PLAIN_HOUSE_NO.fullmatch(x["DEINR"])]
+        e = min(plain or ents, key=lambda x: int(x["EDID"] or 0))  # main entrance if a house has several
+        by_municipality[b["GGDENR"]].append({
+            "canton": b["GDEKT"], "municipality": b["GGDENAME"], "bfs_code": b["GGDENR"],
+            "address": f"{e['STRNAME']} {e['DEINR']}", "plz": e["DPLZ4"], "egid": egid,
+            # internal, not written to the CSV
+            "_plain": bool(plain), "_letter_suffix": bool(LETTER_SUFFIX_NO.fullmatch(e["DEINR"])),
+            "_street": e["STRNAME"].lower(),
+            "_base": (e["STRNAME"].lower(), LEADING_NUMBER.match(e["DEINR"]).group()),
+        })
+    return by_municipality
 
-    while len(found) < n and attempts < MAX_ATTEMPTS_PER_MUNICIPALITY:
-        attempts += 1
-        e = random.uniform(min_e, max_e)
-        n_coord = random.uniform(min_n, max_n)
-        try:
-            results = identify_building(e, n_coord)
-        except requests.RequestException:
-            time.sleep(1)
+
+def sample_municipality(homes, rng, keep=(), exclude=frozenset()):
+    """Returns (newly picked homes, number added by step 4a, number added by step 4b).
+
+    `keep` = homes already in the sample: they count towards the target, the street limit and
+    the base addresses. `exclude` = EGIDs never to pick (e.g. addresses whose quote failed).
+    With the same rng seed the shuffled order is the same, so replacements continue the
+    original draw (replace_failed_municipality_addresses.py)."""
+    by_egid = lambda h: int(h["egid"])  # independent of file order
+    plain = sorted((h for h in homes if h["_plain"]), key=by_egid)
+    rng.shuffle(plain)
+    need = TARGET_PER_MUNICIPALITY - len(keep)
+    taken = {h["egid"] for h in keep} | set(exclude)
+    found, street_counts = [], defaultdict(int)
+    for h in keep:
+        street_counts[h["_street"]] += 1
+    for h in plain:
+        if len(found) >= need:
+            break
+        if h["egid"] in taken or street_counts[h["_street"]] >= MAX_PER_STREET:
             continue
-        time.sleep(0.1)
+        street_counts[h["_street"]] += 1
+        taken.add(h["egid"])
+        found.append(h)
 
-        for res in results:
-            attrs = res.get("attributes", {})
-            egid = str(attrs.get("egid"))
-            if egid in seen_egids:
-                continue
-            if attrs.get("ggdename") != muni_name:
-                continue
-            if str(attrs.get("gklas")) != GKLAS_EINFAMILIENHAUS:
-                continue
-            if str(attrs.get("gstat")) != GSTAT_EXISTING:
-                continue
+    # step 4a: same shuffled order, without the street limit
+    n_strict = len(found)
+    for h in plain:
+        if len(found) >= need:
+            break
+        if h["egid"] not in taken:
+            taken.add(h["egid"])
+            found.append(h)
+    n_street = len(found) - n_strict
 
-            this_canton = str(attrs.get("gdekt"))
-            if discovered_canton is None:
-                discovered_canton = this_canton
-            elif this_canton != discovered_canton:
-                # extremely unlikely (would mean two different-canton
-                # municipalities sharing an exact name), but don't silently
-                # mix cantons within one municipality's results if it happens
-                continue
-
-            seen_egids.add(egid)
-            found.append({
-                "canton": discovered_canton, "municipality": muni_name, "bfs_code": bfs_code,
-                "address": attrs.get("strname_deinr", ""),
-                "plz": str(attrs.get("plz_plz6", "")).split("/")[0],
-                "egid": egid,
-            })
-            if len(found) >= n:
+    # step 4b: letter-suffixed numbers (5a), one building per base address
+    if len(found) < need:
+        bases = {h["_base"] for h in [*keep, *found]}
+        others = sorted((h for h in homes if h["_letter_suffix"]), key=by_egid)
+        rng.shuffle(others)
+        for h in others:
+            if len(found) >= need:
                 break
-
-    error = None if len(found) >= n else f"only found {len(found)}/{n} in {attempts} attempts"
-    return found, attempts, error
-
-
-def load_completed_municipalities():
-    """Which municipalities already have output rows -- for resuming."""
-    if not os.path.exists(OUTFILE):
-        return set()
-    with open(OUTFILE, newline="", encoding="utf-8-sig") as f:
-        rows = list(csv.DictReader(f))
-    # a municipality counts as "done" if it already has TARGET_PER_MUNICIPALITY rows
-    # keyed by bfs_code, since canton is no longer known from the input file
-    counts = {}
-    for row in rows:
-        key = row["bfs_code"]
-        counts[key] = counts.get(key, 0) + 1
-    return {key for key, count in counts.items() if count >= TARGET_PER_MUNICIPALITY}
+            if h["egid"] not in taken and h["_base"] not in bases:
+                bases.add(h["_base"])
+                taken.add(h["egid"])
+                found.append(h)
+    return found, n_street, len(found) - n_strict - n_street
 
 
-def append_rows(rows, file_lock_retry_msg="municipality_addresses.csv"):
-    """Append rows to OUTFILE, creating it with a header if needed. Retries
-    on Windows file-lock errors instead of crashing and losing progress."""
-    file_exists = os.path.exists(OUTFILE)
-    while True:
-        try:
-            with open(OUTFILE, "a", newline="", encoding="utf-8-sig") as f:
-                writer = csv.DictWriter(f, fieldnames=OUTPUT_FIELDNAMES)
-                if not file_exists:
-                    writer.writeheader()
-                writer.writerows(rows)
-                f.flush()
-            return
-        except PermissionError:
-            input(f"\n'{file_lock_retry_msg}' appears to be open in another program (e.g. Excel). "
-                  f"Close it, then press Enter to retry...")
+def load_municipalities():
+    with open(INFILE, newline="", encoding="utf-8-sig") as f:
+        return list(csv.DictReader(f))
+
+
+def load_all_homes(cantons):
+    """Eligible homes for the given cantons, grouped by bfs_code (downloads missing zips)."""
+    os.makedirs(CACHE_DIR, exist_ok=True)
+    print("Downloading GWR canton files (cached after the first run)...")
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        zip_paths = list(pool.map(download_canton_zip, cantons))
+    homes = {}
+    for path in zip_paths:
+        homes.update(eligible_homes(path))
+    return homes
+
+
+def municipality_rng(seed, bfs_code):
+    # one RNG per municipality: its sample does not depend on the others
+    return random.Random(f"{seed}-{bfs_code}")
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
+    parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     args = parser.parse_args()
 
-    with open(INFILE, newline="", encoding="utf-8-sig") as f:
-        all_munis = list(csv.DictReader(f))
-    print(f"Loaded {len(all_munis)} municipalities from {INFILE}")
+    all_munis = load_municipalities()
+    cantons = sorted({m["canton"] for m in all_munis})
+    print(f"Loaded {len(all_munis)} municipalities in {len(cantons)} cantons from {INFILE}")
+    homes = load_all_homes(cantons)
 
-    done = load_completed_municipalities()
-    todo = [m for m in all_munis if m["bfs_code"] not in done]
-    print(f"{len(done)} already completed (resuming), {len(todo)} remaining\n")
+    rows, short, filled = [], [], []
+    for m in all_munis:
+        picked, n_street, n_suffix = sample_municipality(
+            homes.get(m["bfs_code"], []), municipality_rng(args.seed, m["bfs_code"]))
+        rows.extend(picked)
+        label = f"{m['canton']} {m['municipality']} ({m['bfs_code']}): {len(picked)}"
+        if n_street or n_suffix:
+            filled.append(f"{label} (+{n_street} without street limit, +{n_suffix} letter-suffixed numbers)")
+        if len(picked) < TARGET_PER_MUNICIPALITY:
+            short.append(label)
 
-    if not todo:
-        print("Nothing left to do.")
-        return
+    with open(OUTFILE, "w", newline="", encoding="utf-8-sig") as f:
+        writer = csv.DictWriter(f, fieldnames=OUTPUT_FIELDNAMES, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(rows)
 
-    completed_count = len(done)
-    error_log = []
-
-    with ThreadPoolExecutor(max_workers=args.workers) as pool:
-        futures = {
-            pool.submit(sample_municipality, m["municipality"], m["bfs_code"],
-                        TARGET_PER_MUNICIPALITY): m
-            for m in todo
-        }
-        for future in as_completed(futures):
-            m = futures[future]
-            try:
-                rows, attempts, error = future.result()
-            except Exception as exc:
-                rows, attempts, error = [], 0, f"unexpected failure: {exc}"
-
-            if rows:
-                append_rows(rows)
-            completed_count += 1
-
-            status = "OK" if not error else f"ISSUE: {error}"
-            print(f"[{completed_count}/{len(all_munis)}] {m['municipality']} "
-                  f"({attempts} attempts): {status}")
-
-            if error:
-                error_log.append(f"{m['municipality']}: {error}")
-
-    print(f"\nDone with this pass. {len(error_log)} municipalities had issues.")
-    if error_log:
-        print("Re-run this same script to retry them (it resumes automatically) "
-              "-- or investigate individually if the same ones keep failing:")
-        for line in error_log[:30]:
-            print(f"  {line}")
+    print(f"\nWrote {len(rows)} addresses for {len(all_munis)} municipalities to {OUTFILE}")
+    print(f"{len(filled)} municipalities filled up with step 4:")
+    for line in filled:
+        print(f"  {line}")
+    print(f"{len(short)} municipalities have fewer than {TARGET_PER_MUNICIPALITY}:")
+    for line in short:
+        print(f"  {line}")
 
 
 if __name__ == "__main__":

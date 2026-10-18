@@ -41,6 +41,7 @@ import argparse
 import csv
 import os
 import random
+import re
 import time
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -108,6 +109,16 @@ def identify_building(easting: float, northing: float, tolerance: int = IDENTIFY
     return r.json().get("results", [])
 
 
+# Only plain numeric house numbers ("Eichstrasse 5"). Anything else -- 5a, 30.1, 1.52, 714a.99 --
+# is usually an extra / attached building on the same plot, and sampling it next to the main house
+# collects several buildings of one address.
+PLAIN_HOUSE_NO = re.compile(r"\s\d+$")
+
+
+def has_plain_house_number(addr):
+    return bool(PLAIN_HOUSE_NO.search((addr or "").strip()))
+
+
 def sample_canton(canton_code: str, n: int):
     print(f"Starting {canton_code}...")
     min_e, min_n, max_e, max_n = CANTON_BBOX[canton_code]
@@ -129,9 +140,12 @@ def sample_canton(canton_code: str, n: int):
 
         time.sleep(SLEEP_BETWEEN_CALLS)
 
+        # collect acceptable buildings near this point and keep only ONE of them
+        candidates = []
         for res in results:
             attrs = res.get("attributes", {})
             egid = attrs.get("egid")
+            addr = attrs.get("strname_deinr", "")
             if egid in seen_egids:
                 continue
             if str(attrs.get("gdekt")) != canton_code:
@@ -140,18 +154,22 @@ def sample_canton(canton_code: str, n: int):
                 continue
             if str(attrs.get("gstat")) != GSTAT_EXISTING:
                 continue
+            if not has_plain_house_number(addr):
+                continue
+            candidates.append(attrs)
 
-            seen_egids.add(egid)
-            found.append({
-                "canton": canton_code,
-                "address": attrs.get("strname_deinr", ""),
-                "plz": str(attrs.get("plz_plz6", "")).split("/")[0],
-                "municipality": attrs.get("ggdename", ""),
-                "egid": egid,
-            })
-            print(f"  [{canton_code}] found {len(found)}/{n}: {attrs.get('strname_deinr')}")
-            if len(found) >= n:
-                break
+        if not candidates:
+            continue
+        attrs = random.choice(candidates)
+        seen_egids.add(attrs.get("egid"))
+        found.append({
+            "canton": canton_code,
+            "address": attrs.get("strname_deinr", ""),
+            "plz": str(attrs.get("plz_plz6", "")).split("/")[0],
+            "municipality": attrs.get("ggdename", ""),
+            "egid": attrs.get("egid"),
+        })
+        print(f"  [{canton_code}] found {len(found)}/{n}: {attrs.get('strname_deinr')}")
 
     if len(found) < n:
         print(f"  [{canton_code}] WARNING: only found {len(found)}/{n} after "
