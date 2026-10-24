@@ -70,6 +70,7 @@ MAX_REPLACEMENT_ATTEMPTS_PER_ROW = 6   # fresh-address attempts for stragglers
 ADDRESS_FIELDNAMES = ["canton", "address", "plz", "municipality", "egid"]
 QUOTE_FIELDNAMES = ADDRESS_FIELDNAMES + [
     "buildingGroundArea_sqm", "roofPlanesFound", "roofPlanesSelected",
+    "installedArea_sqm", "nominalPower_kW", "existingPV_kW",
     "grossInvest_CHF", "subsidies_CHF", "netInvest_CHF", "paybackTime_years",
     "producedKwhYear_kWh", "selfConsumedKwhYear_kWh", "selfConsumptionPct_pct", "gridFeedinKwhYear_kWh",
     "error", "raw_json",
@@ -329,6 +330,16 @@ def get_quote_for_row(row):
             out["subsidies_CHF"] = pv_all.get("subsidies")
             out["netInvest_CHF"] = pv_all.get("netInvest")
             out["paybackTime_years"] = pv_all.get("paybackTime")
+            # Capacity as the website shows it: per-plane "Nennleistung, kW" = module area x PV efficiency
+            # (20%), so the total is installedArea x 0.2. Not pvSystem.nominalPower: for buildings with an
+            # existing PV system (existingNominalPower) it is lower than the website's value (checked
+            # 2026-10-24 on Oberalbisstrasse 13, 8915: website 24.5, nominalPower 23.44; costs match).
+            pv = report.get("pvSystem") or {}
+            out["installedArea_sqm"] = pv.get("installedArea")
+            if pv.get("installedArea"):
+                eff = float(pv.get("pvEfficiencySTC") or 20) / 100
+                out["nominalPower_kW"] = round(float(pv["installedArea"]) * eff, 3)
+            out["existingPV_kW"] = pv.get("existingNominalPower")
             try:
                 out["producedKwhYear_kWh"] = report["pvSystem"]["Eac"][0]
             except (KeyError, IndexError):
@@ -349,6 +360,12 @@ def get_quote_for_row(row):
                 "buildingReport_stSystem": report.get("stSystem"),
                 "buildingReport_electricUser": report.get("electricUser"),
             }, ensure_ascii=False)
+            # Valid response without a PV system (checked 2026-10-24 in the municipality data: grossInvest 0,
+            # no nominalPower). Same answer on every request, so no retry; counted as a failure so the
+            # address gets replaced.
+            if (report.get("pvSystem") or {}).get("isActive") != "true":
+                out["error"] = "no PV system: buildingReport pvSystem isActive=false (grossInvest 0)"
+                return out
             out.pop("error", None)
             return out
 

@@ -9,7 +9,9 @@ by canton and by municipality, taken from the federal
 | 🏔️ **Municipality** | up to 10 homes × 2,110 municipalities = **21,077** | **20,932** (99.3%) | `municipality/municipality_quotes_summary.csv` |
 | 🗺️ **Canton** | 3 homes × 26 cantons = **78** | **78** (100%) | `canton/solarrechner_quotes_summary.csv` |
 
-Results as of 2026-10-18.
+Results as of 2026-10-23 (municipality) and 2026-10-24 (canton). SolarRechner lowered its cost
+estimates between 2026-10-18 and 2026-10-23: for the same buildings and the same system size,
+the gross investment dropped by 3–10% (median −8.7%), so both datasets were collected again.
 
 ---
 
@@ -42,6 +44,10 @@ Every quote uses the same settings:
 > KLEIV subsidy, tax savings and net investment are identical. Payback period, total
 > balance and average return were compared on 3 addresses and are identical with the same
 > number of residents (these three depend on the residents, the costs do not).
+> Re-checked after the price change (2026-10-23/24): gross investment of Brunngasse 10,
+> Kleinandelfingen and the full cost dialog, module area, *Nennleistung* and existing PV
+> system of Oberalbisstrasse 13, Hausen am Albis are identical. The four energy columns
+> are the fields the website's result table reads (checked in its frontend code).
 
 ---
 
@@ -89,7 +95,7 @@ The scripts send the same requests as the SolarRechner website (backend: Tachion
 |---|---|---|
 | 1 | `api3.geo.admin.ch` SearchServer | Geocode the address; use the hit for the sampled building (EGID), otherwise the address fails |
 | 2 | `/sim/attrs` | Parcel, coordinates, electricity provider and tariff; if it answers with another building (other EGID), the address fails |
-| 3 | `/sim/planes` | Roof and facade planes of the building |
+| 3 | `/sim/planes` | Roof and facade planes; can include planes of other buildings on the parcel, which the website's optimization (step 4) may also select |
 | 4 | `/sim/buildingReport`, `state: SOLAR_OPT` | Website's first result, on the planes as returned by step 3 |
 | 5 | `/sim/buildingReport`, no state | Planes from step 4 with facades and ≥ 75° roof planes off, `occupantNumber = 4` in `signature.input` |
 
@@ -146,11 +152,19 @@ steps). Below 10: Berken BE 8, Mauraz VD 8, Lavizzara TI 1, Cerentino TI 0.
 - At most 5 candidates per failed address over all runs; addresses already tried are
   never tried again.
 - Skips candidates in postal codes that had a missing-weather-data error.
+- A valid answer without a PV system (`pvSystem.isActive` false, gross investment 0) counts
+  as a failure. In the 2026-10-23 run this happened for 39 addresses (in 3 of them the 75°
+  rule switched off the only selected plane); all 39 were replaced.
+- One address was excluded by hand and replaced: Chemin de Montofrey 3, 1040
+  Villars-le-Terroir (selected module area 0.007 m², 0.0014 kW, gross CHF 6,100).
 
 After the first quote run 802 addresses had failed; 657 were replaced by addresses of the
 same municipality that got a quote. A later check found 55 quotes (0.26%) made for another
 building than the sampled one: 37 were re-quoted for the sampled building, 18 were replaced
 (17 because `/attrs` answers with another building, 1 server error).
+
+In the 2026-10-23 re-run, 13 addresses that had a quote on 2026-10-18 failed (server errors,
+geocoding, `/attrs` answering with another building) and were replaced the same way.
 </details>
 
 <details>
@@ -166,7 +180,7 @@ writes `municipality_quotes_summary.csv`, and moves dropped rows to
 ## Canton dataset
 
 **78 addresses → 78 quotes (100%)**, 3 per canton. 4 addresses were replaced after server
-errors.
+errors (2026-10-18); in the 2026-10-24 re-run all 78 addresses got a quote again.
 
 <details>
 <summary><b>Scripts</b></summary>
@@ -200,6 +214,9 @@ The 145 municipality-level addresses without a quote all fail on Tachion's serve
 |---|---|
 | `canton`, `municipality`, `bfs_code`, `address`, `plz` | Sampled address (`bfs_code` in the municipality dataset only) |
 | `buildingGroundArea_sqm` | Building footprint from Tachion (QC) |
+| `installedArea_sqm` | Total module area of the selected PV planes (*Modulfläche*, summed over planes) |
+| `nominalPower_kW` | PV capacity as the website shows it (*Nennleistung, kW*, shown per roof surface there): module area × 0.2 kW/m² (PV efficiency 20%), summed over the selected surfaces. Not Tachion's `pvSystem.nominalPower`, which is lower for buildings with an existing PV system |
+| `existingPV_kW` | Existing PV system at the address according to SolarRechner (*Bereits bestehende Solarsysteme*); empty if none. The website deducts its area share in the cost calculation |
 | `grossInvest_CHF` | Investment incl. VAT for the PV system, without battery (*Investitionskosten Solar*) |
 | `subsidies_CHF` | One-time federal subsidy (*Kleine Einmalvergütung KLEIV*) |
 | `netInvest_CHF` | Gross investment − KLEIV − tax savings (*Nettoinvestition*) |
@@ -240,7 +257,7 @@ municipality/
 ```
 
 Not in the repository (gitignored, large or local): `municipality/municipality_quotes.csv`
-(full results with raw_json, ~460 MB), `municipality/municipality_quote_attempts.csv`
+(full results with raw_json, ~480 MB), `municipality/municipality_quote_attempts.csv`
 (quote rows of replaced addresses), `municipality/gwr_cache/` (GWR downloads, ~0.9 GB).
 
 ---

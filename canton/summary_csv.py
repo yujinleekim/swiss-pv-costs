@@ -15,7 +15,7 @@ OUTFILE = os.path.join(_HERE, "solarrechner_quotes_summary.csv")
 
 SUMMARY_COLUMNS = [
     "canton", "address", "plz", "municipality",
-    "buildingGroundArea_sqm",
+    "buildingGroundArea_sqm", "installedArea_sqm", "nominalPower_kW", "existingPV_kW",
     "grossInvest_CHF", "subsidies_CHF", "netInvest_CHF", "paybackTime_years",
     "producedKwhYear_kWh", "selfConsumedKwhYear_kWh", "selfConsumptionPct_pct", "gridFeedinKwhYear_kWh",
 ]
