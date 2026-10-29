@@ -46,6 +46,11 @@ OCCUPANT_NUMBER = "4"
 # in our tests Tachion's separate pvModuleSteep cost appeared from 75 deg on, never at 72 or less.
 MAX_ROOF_TILT = 75
 TACHION_API_KEY = "3xs8-51ua-9ky5"
+# Eignung (suitability) class of a roof plane = feature.attributes.klasse, 1 = lowest (light blue on the
+# map) to 5 = highest (dark red). Names from the Sonnendach layer ch.bfe.solarenergie-eignung-daecher
+# (klasse_text, English), checked 2026-10-28; the website legend only labels the ends "gering" / "hervorragend".
+SUITABILITY_CLASSES = [("5", "Top"), ("4", "VeryGood"), ("3", "Good"), ("2", "Mean"), ("1", "Low")]
+SUITABILITY_COLUMNS = [f"nominalPower{name}_kW" for _, name in SUITABILITY_CLASSES]
 
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -54,9 +59,10 @@ OUTFILE = os.path.join(_HERE, "municipality_quotes.csv")
 OUTPUT_FIELDNAMES = [
     "canton", "municipality", "bfs_code", "address", "plz", "egid",
     "buildingGroundArea_sqm", "roofPlanesFound", "roofPlanesSelected",
-    "installedArea_sqm", "nominalPower_kW", "existingPV_kW",
+    "installedArea_sqm", "nominalPower_kW", *SUITABILITY_COLUMNS, "existingPV_kW",
     "grossInvest_CHF", "subsidies_CHF", "netInvest_CHF", "paybackTime_years",
     "producedKwhYear_kWh", "selfConsumedKwhYear_kWh", "selfConsumptionPct_pct", "gridFeedinKwhYear_kWh",
+    "electricConsumption_kWh",
     "error", "raw_json",
 ]
 
@@ -172,6 +178,31 @@ def switch_off_steep_roofs(roofs):
     return out, off
 
 
+def kw_by_suitability(roofs, eff):
+    """kW of the selected PV roof planes per Eignung class (module area moduleNumber x PV efficiency).
+    Only technologyType _pv: SOLAR_OPT can also put solar thermal (_st) on a plane. The sum equals
+    nominalPower_kW (checked 2026-10-28 on 43 addresses, incl. existing PV; differences <= 0.005 m2)."""
+    kw = {k: 0.0 for k, _ in SUITABILITY_CLASSES}
+    for p in roofs or []:
+        if p and p.get("selected") == "true" and p.get("technologyType") == "_pv":
+            k = ((p.get("feature") or {}).get("attributes") or {}).get("klasse")
+            if k in kw:
+                kw[k] += float(p.get("moduleNumber") or 0) * eff
+    return {col: round(kw[k], 3) for (k, _), col in zip(SUITABILITY_CLASSES, SUITABILITY_COLUMNS)}
+
+
+def plane_list(roofs):
+    """Short per-plane record for raw_json (the full plane objects are large)."""
+    out = []
+    for p in roofs or []:
+        if not p:
+            continue
+        a = (p.get("feature") or {}).get("attributes") or {}
+        out.append({k: a.get(k) for k in ("id", "building_id", "klasse", "neigung", "ausrichtung", "flaeche")}
+                   | {k: p.get(k) for k in ("selected", "technologyType", "moduleNumber")})
+    return out
+
+
 def find_cost_component(node, target_name):
     if not isinstance(node, dict):
         return None
@@ -276,10 +307,14 @@ def get_quote_for_row(row):
             # 2026-10-24 on Oberalbisstrasse 13, 8915: website 24.5, nominalPower 23.44; costs match).
             pv = report.get("pvSystem") or {}
             out["installedArea_sqm"] = pv.get("installedArea")
+            eff = float(pv.get("pvEfficiencySTC") or 20) / 100
             if pv.get("installedArea"):
-                eff = float(pv.get("pvEfficiencySTC") or 20) / 100
                 out["nominalPower_kW"] = round(float(pv["installedArea"]) * eff, 3)
+            # per-plane module areas as sent in request 2 (the website shows these, not the response's roof)
+            out.update(kw_by_suitability(final_roof, eff))
             out["existingPV_kW"] = pv.get("existingNominalPower")
+            # "Stromverbrauch" field on the website (EnergyTechWidget: formerElectricConsumption, shown rounded)
+            out["electricConsumption_kWh"] = (report.get("energySystem") or {}).get("formerElectricConsumption")
             try:
                 out["producedKwhYear_kWh"] = report["pvSystem"]["Eac"][0]
             except (KeyError, IndexError):
@@ -293,7 +328,7 @@ def get_quote_for_row(row):
                 pass
             out["raw_json"] = json.dumps({
                 "planes_attrs": planes_resp.get("attrs"), "buildingReport_param": report.get("param"),
-                "steep_roof_planes_off": steep_off,
+                "steep_roof_planes_off": steep_off, "roof_planes": plane_list(final_roof),
                 "buildingReport_costAnalysis": report.get("costAnalysis"),
                 "buildingReport_energySystem": report.get("energySystem"),
                 "buildingReport_pvSystem": report.get("pvSystem"),

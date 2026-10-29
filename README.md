@@ -6,12 +6,14 @@ by canton and by municipality, taken from the federal
 
 | Dataset | Sample | Quotes | File |
 |---|---|---|---|
-| 🏔️ **Municipality** | up to 10 homes × 2,110 municipalities = **21,077** | **20,932** (99.3%) | `municipality/municipality_quotes_summary.csv` |
+| 🏔️ **Municipality** | up to 10 homes × 2,110 municipalities = **21,077** | **20,931** (99.3%) | `municipality/municipality_quotes_summary.csv` |
 | 🗺️ **Canton** | 3 homes × 26 cantons = **78** | **78** (100%) | `canton/solarrechner_quotes_summary.csv` |
 
-Results as of 2026-10-23 (municipality) and 2026-10-24 (canton). SolarRechner lowered its cost
-estimates between 2026-10-18 and 2026-10-23: for the same buildings and the same system size,
-the gross investment dropped by 3–10% (median −8.7%), so both datasets were collected again.
+Results as of 2026-10-28 (both datasets, collected again to add the kW per suitability class
+and the electricity consumption). Costs did not change since 2026-10-23: for 20,834 of the
+20,930 homes quoted in both runs the gross investment is identical. SolarRechner had lowered
+its cost estimates between 2026-10-18 and 2026-10-23 (same buildings and system size: gross
+investment −3% to −10%, median −8.7%).
 
 ---
 
@@ -39,6 +41,8 @@ Every quote uses the same settings:
 | Residents (*Bewohner im Haus*) | **4** |
 | Facade planes | **Off** |
 | Roof planes tilted ≥ 75° | **Off** (wall-like surfaces; 75° is the threshold of the federal tilt bonus, EnFV: *"Neigungswinkel von mindestens 75 Grad"*) |
+| Battery, electric car | **Off** (website default; the greyed-out battery capacity and *E-Mobilität* km are only suggested values) |
+| Roof planes and solar thermal | Website default selection. In 21% of the municipality homes it also puts solar thermal collectors on a roof plane (for 933 of them a solar thermal system already exists). All cost and kW columns are for the PV system only, as in the website's PV results; solar thermal costs are not included |
 
 > ✅ **Checked against the website** on 5 addresses with these settings: gross investment,
 > KLEIV subsidy, tax savings and net investment are identical. Payback period, total
@@ -48,6 +52,9 @@ Every quote uses the same settings:
 > Kleinandelfingen and the full cost dialog, module area, *Nennleistung* and existing PV
 > system of Oberalbisstrasse 13, Hausen am Albis are identical. The four energy columns
 > are the fields the website's result table reads (checked in its frontend code).
+> 2026-10-28: per-plane module area and *Nennleistung* of Brunngasse 10, the selected planes
+> and module areas of Route du Praz-des-Riaux 2, Fribourg, and the PV cost dialog of
+> Im Rötler 8, Sulgen (a home with solar thermal) match the website.
 
 ---
 
@@ -107,8 +114,8 @@ costs in 35 of 60 tested buildings.
 
 ## Municipality dataset
 
-**21,077 addresses → 20,932 quotes (99.3%).** 2,096 of 2,110 municipalities have at least
-one quote, 2,091 have all 10.
+**21,077 addresses → 20,931 quotes (99.3%).** 2,096 of 2,110 municipalities have at least
+one quote, 2,090 have all 10.
 
 <details>
 <summary><b>1. Municipality list</b> — <code>build_municipality_list.py</code></summary>
@@ -165,6 +172,9 @@ building than the sampled one: 37 were re-quoted for the sampled building, 18 we
 
 In the 2026-10-23 re-run, 13 addresses that had a quote on 2026-10-18 failed (server errors,
 geocoding, `/attrs` answering with another building) and were replaced the same way.
+In the 2026-10-28 re-run, 1 address was replaced (geocoding, Luins) and 1 address that had a
+quote before now fails with `BUILDING_TOO_BIG` (Chemin des Grèves 16, Chevroux; its 5
+replacement candidates failed too).
 </details>
 
 <details>
@@ -180,7 +190,8 @@ writes `municipality_quotes_summary.csv`, and moves dropped rows to
 ## Canton dataset
 
 **78 addresses → 78 quotes (100%)**, 3 per canton. 4 addresses were replaced after server
-errors (2026-10-18); in the 2026-10-24 re-run all 78 addresses got a quote again.
+errors (2026-10-18); in the 2026-10-24 and 2026-10-28 re-runs all 78 addresses got a quote
+again.
 
 <details>
 <summary><b>Scripts</b></summary>
@@ -198,13 +209,13 @@ errors (2026-10-18); in the 2026-10-24 re-run all 78 addresses got a quote again
 
 ## Missing quotes
 
-The 145 municipality-level addresses without a quote all fail on Tachion's server:
+The 146 municipality-level addresses without a quote all fail on Tachion's server:
 
 | Error | Addresses | What was checked |
 |---|---:|---|
 | 🌦️ Missing weather data (`readMeteodataFile`) | 133 | The missing file is `CH<PLZ>.met` for the address's postal code (14 postal codes among the final failures; 20 seen in all runs); the server picks it from `attrs.plz4`. No address in these postal codes got a quote. 12 municipalities have only such a postal code (e.g. Yens, Brüttelen, Montfaucon); Les Enfers and Saint-Brais have no other homes left. |
 | 🧱 `buildingReport` error (`null` / NullPointerException) | 11 | All have no wall data in `/planes`; every such building tested failed (77 of 77). In Collonges VS no tested building has wall data (60 tried); the website gives no quote there either (1 address checked). |
-| 📐 `BUILDING_TOO_BIG` (`/planes`) | 1 | Not related to building size (median footprint 107 m² vs 108 m² for successful ones). In 37 of 38 tested cases no roof plane lies inside the parcel returned by `/attrs`. |
+| 📐 `BUILDING_TOO_BIG` (`/planes`) | 2 | Not related to building size (median footprint 107 m² vs 108 m² for successful ones). In 37 of 38 tested cases no roof plane lies inside the parcel returned by `/attrs`. |
 
 ---
 
@@ -216,6 +227,7 @@ The 145 municipality-level addresses without a quote all fail on Tachion's serve
 | `buildingGroundArea_sqm` | Building footprint from Tachion (QC) |
 | `installedArea_sqm` | Total module area of the selected PV planes (*Modulfläche*, summed over planes) |
 | `nominalPower_kW` | PV capacity as the website shows it (*Nennleistung, kW*, shown per roof surface there): module area × 0.2 kW/m² (PV efficiency 20%), summed over the selected surfaces. Not Tachion's `pvSystem.nominalPower`, which is lower for buildings with an existing PV system |
+| `nominalPowerTop_kW`, `nominalPowerVeryGood_kW`, `nominalPowerGood_kW`, `nominalPowerMean_kW`, `nominalPowerLow_kW` | `nominalPower_kW` split by the suitability class (*Eignung*) of the selected roof planes, i.e. the colour on the website map from dark red (Top) to light blue (Low). Class names as on Sonnendach (`ch.bfe.solarenergie-eignung-daecher`). 0 if the system has no plane of that class; the five add up to `nominalPower_kW` |
 | `existingPV_kW` | Existing PV system at the address according to SolarRechner (*Bereits bestehende Solarsysteme*); empty if none. The website deducts its area share in the cost calculation |
 | `grossInvest_CHF` | Investment incl. VAT for the PV system, without battery (*Investitionskosten Solar*) |
 | `subsidies_CHF` | One-time federal subsidy (*Kleine Einmalvergütung KLEIV*) |
@@ -225,12 +237,14 @@ The 145 municipality-level addresses without a quote all fail on Tachion's serve
 | `selfConsumedKwhYear_kWh` | Self-consumed solar electricity per year |
 | `selfConsumptionPct_pct` | Self-consumption ratio (*Eigenverbrauchsanteil*) |
 | `gridFeedinKwhYear_kWh` | Electricity fed into the grid per year |
+| `electricConsumption_kWh` | Annual electricity consumption the website assumes for the household (*Stromverbrauch*, shown rounded there) |
 
 The full CSVs (`*_quotes.csv`) additionally have `egid`, `roofPlanesFound` /
 `roofPlanesSelected` (roof planes after the tilt rule), `error` (server or request error,
 empty if the quote succeeded) and `raw_json` (attrs, parameters, cost analysis and energy
 results of the final request, plus `steep_roof_planes_off`: ids of the planes switched off
-by the 75° rule).
+by the 75° rule, and `roof_planes`: every roof plane sent in the final request with its
+class, tilt, orientation, area, selection and module area).
 
 ---
 
@@ -257,7 +271,7 @@ municipality/
 ```
 
 Not in the repository (gitignored, large or local): `municipality/municipality_quotes.csv`
-(full results with raw_json, ~480 MB), `municipality/municipality_quote_attempts.csv`
+(full results with raw_json, ~505 MB), `municipality/municipality_quote_attempts.csv`
 (quote rows of replaced addresses), `municipality/gwr_cache/` (GWR downloads, ~0.9 GB).
 
 ---
