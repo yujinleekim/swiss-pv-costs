@@ -16,6 +16,7 @@ writes a smaller Excel-friendly summary (no raw_json) the same way
 canton/summary_csv.py does for the canton-level dataset.
 """
 
+import argparse
 import csv
 import os
 import re
@@ -65,6 +66,16 @@ def classify_error(msg):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--solar-thermal-off", action="store_true",
+                        help="finalize the solar thermal variant (get_municipality_quotes.py --solar-thermal-off); "
+                             "same addresses, no replacement, so nothing is written to the attempts file")
+    args = parser.parse_args()
+    global INFILE, SUMMARY_OUTFILE
+    if args.solar_thermal_off:
+        INFILE = os.path.join(_HERE, "municipality_quotes_solar_thermal_off.csv")
+        SUMMARY_OUTFILE = os.path.join(_HERE, "municipality_quotes_solar_thermal_off_summary.csv")
+
     with open(INFILE, newline="", encoding="utf-8-sig") as f:
         rows = list(csv.DictReader(f))
     fieldnames = list(rows[0].keys())
@@ -121,7 +132,7 @@ def main():
     # keep the dropped rows (duplicates, replaced addresses) as attempt history
     kept = {id(r) for r in deduped}
     dropped = [r for r in rows if id(r) not in kept]
-    if dropped:
+    if dropped and not args.solar_thermal_off:
         new_file = not os.path.exists(ATTEMPTS_FILE)
         with open(ATTEMPTS_FILE, "a", newline="", encoding="utf-8-sig") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
