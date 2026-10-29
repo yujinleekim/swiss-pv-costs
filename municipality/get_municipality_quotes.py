@@ -18,6 +18,7 @@ OUTPUT: municipality_quotes.csv     (append-only, safe to resume)
 USAGE:
   python get_municipality_quotes.py                # start / resume
   python get_municipality_quotes.py --workers 5     # tune concurrency
+  python get_municipality_quotes.py --solar-thermal-off   # variant, own output file
 """
 
 import argparse
@@ -65,6 +66,13 @@ OUTPUT_FIELDNAMES = [
     "electricConsumption_kWh",
     "error", "raw_json",
 ]
+
+# --solar-thermal-off: variant for comparison. SOLAR_OPT also proposes solar thermal (technologyType _st)
+# on some roof planes (21% of homes in the 2026-10-28 run); this switches those planes off in request 2,
+# except in homes with an existing solar thermal system (param existingCollectorArea), which stay as on
+# the website. Written to its own files so the default dataset is not touched.
+SOLAR_THERMAL_OFF = False
+OUTFILE_SOLAR_THERMAL_OFF = os.path.join(_HERE, "municipality_quotes_solar_thermal_off.csv")
 
 DEFAULT_WORKERS = 20  # measured 2026-10-15: 5 -> ~5,000 rows/h, 20 -> ~8,300 rows/h, 40 -> barely faster
 SLEEP_BETWEEN_CALLS = 0.0   # was 0.5s per completed address -- redundant throttling
@@ -178,6 +186,20 @@ def switch_off_steep_roofs(roofs):
     return out, off
 
 
+def switch_off_new_solar_thermal(roofs, param):
+    """Solar thermal planes off unless the home already has solar thermal. Returns (roof list, ids off)."""
+    existing = {p.get("paramName"): p.get("value") for p in (param or [])}.get("existingCollectorArea")
+    if not roofs or float(existing or 0) > 0:
+        return roofs, []
+    out, off = [], []
+    for p in roofs:
+        if p and p.get("selected") == "true" and p.get("technologyType") == "_st":
+            off.append(((p.get("feature") or {}).get("attributes") or {}).get("id"))
+            p = dict(p, selected="false")
+        out.append(p)
+    return out, off
+
+
 def kw_by_suitability(roofs, eff):
     """kW of the selected PV roof planes per Eignung class (module area moduleNumber x PV efficiency).
     Only technologyType _pv: SOLAR_OPT can also put solar thermal (_st) on a plane. The sum equals
@@ -258,9 +280,11 @@ def get_quote_for_row(row):
             }, timeout=REQUEST_TIMEOUT)
             r2.raise_for_status()
             report = r2.json()
-            steep_off = []
+            steep_off, st_off = [], []
             if report.get("valid"):
                 final_roof, steep_off = switch_off_steep_roofs(report.get("roof"))
+                if SOLAR_THERMAL_OFF:
+                    final_roof, st_off = switch_off_new_solar_thermal(final_roof, report.get("param"))
                 r2 = SESSION.post(TACHION_BUILDING_REPORT, json={
                     "apiKey": TACHION_API_KEY,
                     "signature": {"request": "603", "event": "buildingReport",
@@ -329,6 +353,7 @@ def get_quote_for_row(row):
             out["raw_json"] = json.dumps({
                 "planes_attrs": planes_resp.get("attrs"), "buildingReport_param": report.get("param"),
                 "steep_roof_planes_off": steep_off, "roof_planes": plane_list(final_roof),
+                **({"solar_thermal_planes_off": st_off} if SOLAR_THERMAL_OFF else {}),
                 "buildingReport_costAnalysis": report.get("costAnalysis"),
                 "buildingReport_energySystem": report.get("energySystem"),
                 "buildingReport_pvSystem": report.get("pvSystem"),
@@ -383,7 +408,13 @@ def append_rows(rows):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
+    parser.add_argument("--solar-thermal-off", action="store_true",
+                        help=f"variant without newly proposed solar thermal, written to {OUTFILE_SOLAR_THERMAL_OFF}")
     args = parser.parse_args()
+    if args.solar_thermal_off:
+        global SOLAR_THERMAL_OFF, OUTFILE
+        SOLAR_THERMAL_OFF, OUTFILE = True, OUTFILE_SOLAR_THERMAL_OFF
+        print(f"Solar thermal variant: writing to {OUTFILE}")
 
     with open(INFILE, newline="", encoding="utf-8-sig") as f:
         all_rows = list(csv.DictReader(f))

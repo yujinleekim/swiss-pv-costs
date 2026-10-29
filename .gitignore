@@ -1,4 +1,5 @@
 municipality/municipality_quotes.csv
+municipality/municipality_quotes_solar_thermal_off.csv
 __pycache__/
 *.bak
 *.har

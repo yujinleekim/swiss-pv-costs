@@ -7,6 +7,7 @@ by canton and by municipality, taken from the federal
 | Dataset | Sample | Quotes | File |
 |---|---|---|---|
 | 🏔️ **Municipality** | up to 10 homes × 2,110 municipalities = **21,077** | **20,931** (99.3%) | `municipality/municipality_quotes_summary.csv` |
+| 🏔️ Municipality, solar thermal off | same 21,077 homes | **20,931** (99.3%) | `municipality/municipality_quotes_solar_thermal_off_summary.csv` |
 | 🗺️ **Canton** | 3 homes × 26 cantons = **78** | **78** (100%) | `canton/solarrechner_quotes_summary.csv` |
 
 Results as of 2026-10-28 (both datasets, collected again to add the kW per suitability class
@@ -42,7 +43,7 @@ Every quote uses the same settings:
 | Facade planes | **Off** |
 | Roof planes tilted ≥ 75° | **Off** (wall-like surfaces; 75° is the threshold of the federal tilt bonus, EnFV: *"Neigungswinkel von mindestens 75 Grad"*) |
 | Battery, electric car | **Off** (website default; the greyed-out battery capacity and *E-Mobilität* km are only suggested values) |
-| Roof planes and solar thermal | Website default selection. In 21% of the municipality homes it also puts solar thermal collectors on a roof plane (for 933 of them a solar thermal system already exists). All cost and kW columns are for the PV system only, as in the website's PV results; solar thermal costs are not included |
+| Roof planes and solar thermal | Website default selection. In 21% of the municipality homes it also puts solar thermal collectors on a roof plane (for 933 of them a solar thermal system already exists). All cost and kW columns are for the PV system only, as in the website's PV results; solar thermal costs are not included. A municipality variant without the newly proposed solar thermal is also provided (see [Municipality dataset](#municipality-dataset)) |
 
 > ✅ **Checked against the website** on 5 addresses with these settings: gross investment,
 > KLEIV subsidy, tax savings and net investment are identical. Payback period, total
@@ -70,6 +71,10 @@ python municipality/get_municipality_addresses.py           # sample addresses (
 python municipality/get_municipality_quotes.py              # quotes (several hours, resumable; run 1-2 more times)
 python municipality/replace_failed_municipality_addresses.py
 python municipality/finalize_municipality_quotes.py         # summary CSV + failure breakdown
+
+# Municipality variant without newly proposed solar thermal (same addresses, no replacement)
+python municipality/get_municipality_quotes.py --solar-thermal-off       # run 1-2 more times
+python municipality/finalize_municipality_quotes.py --solar-thermal-off
 
 # Canton dataset
 python canton/get_address.py
@@ -185,6 +190,29 @@ writes `municipality_quotes_summary.csv`, and moves dropped rows to
 `municipality_quote_attempts.csv`.
 </details>
 
+<details>
+<summary><b>Variant: solar thermal off</b> — <code>--solar-thermal-off</code></summary>
+
+The website's default system proposes new solar thermal collectors for some homes. They do
+not change the PV costs or kW, but they cover part of the hot water, so the household's
+electricity consumption is lower, which changes self-consumption and payback. The variant
+switches the newly proposed solar thermal planes off in the final request (as a user can on
+the website); homes with an existing solar thermal system (`existingCollectorArea`) stay as
+on the website. Same 21,077 addresses, no replacement; `raw_json` has
+`solar_thermal_planes_off`.
+
+Result (2026-10-29), compared home by home with the default dataset:
+
+| Homes | Count | Gross investment identical | Median payback | Median change |
+|---|---:|---:|---|---|
+| Newly proposed solar thermal switched off | 3,477 | 99.5% | 15.5 → 13.1 years | self-consumption +15.7 pp, electricity consumption +2,379 kWh |
+| Existing solar thermal kept | 934 | 99.6% | 11.8 → 11.8 years | none |
+| No solar thermal | 16,520 | 99.6% | 11.2 → 11.2 years | none |
+
+Of the remaining differences (69 homes without solar thermal, 0.4%), 64 have a different
+plane selection by the website's optimization between the two runs.
+</details>
+
 ---
 
 ## Canton dataset
@@ -267,11 +295,13 @@ municipality/
 ├── repair_quotes_csv.py                    utility: fix a CSV cut off by an interrupted run (--fix)
 ├── all_municipalities.csv                  2,110 municipalities
 ├── municipality_addresses.csv              sampled addresses (after replacement)
-└── municipality_quotes_summary.csv         summary
+├── municipality_quotes_summary.csv         summary
+└── municipality_quotes_solar_thermal_off_summary.csv  summary, variant without new solar thermal
 ```
 
 Not in the repository (gitignored, large or local): `municipality/municipality_quotes.csv`
-(full results with raw_json, ~505 MB), `municipality/municipality_quote_attempts.csv`
+and `municipality/municipality_quotes_solar_thermal_off.csv` (full results with raw_json,
+~505 MB each), `municipality/municipality_quote_attempts.csv`
 (quote rows of replaced addresses), `municipality/gwr_cache/` (GWR downloads, ~0.9 GB).
 
 ---
