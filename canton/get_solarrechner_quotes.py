@@ -62,6 +62,7 @@ TACHION_API_KEY = "3xs8-51ua-9ky5"
 # (klasse_text, English), checked 2026-10-28; the website legend only labels the ends "gering" / "hervorragend".
 SUITABILITY_CLASSES = [("5", "Top"), ("4", "VeryGood"), ("3", "Good"), ("2", "Mean"), ("1", "Low")]
 SUITABILITY_COLUMNS = [f"nominalPower{name}_kW" for _, name in SUITABILITY_CLASSES]
+PRODUCTION_COLUMNS = [f"producedKwhYear{name}_kWh" for _, name in SUITABILITY_CLASSES]
 
 GKLAS_EINFAMILIENHAUS = "1110"
 GSTAT_EXISTING = "1004"
@@ -77,7 +78,7 @@ QUOTE_FIELDNAMES = ADDRESS_FIELDNAMES + [
     "buildingGroundArea_sqm", "roofPlanesFound", "roofPlanesSelected",
     "installedArea_sqm", "nominalPower_kW", *SUITABILITY_COLUMNS, "existingPV_kW",
     "grossInvest_CHF", "subsidies_CHF", "netInvest_CHF", "paybackTime_years",
-    "producedKwhYear_kWh", "selfConsumedKwhYear_kWh", "selfConsumptionPct_pct", "gridFeedinKwhYear_kWh",
+    "producedKwhYear_kWh", *PRODUCTION_COLUMNS, "selfConsumedKwhYear_kWh", "selfConsumptionPct_pct", "gridFeedinKwhYear_kWh",
     "electricConsumption_kWh",
     "error", "raw_json",
 ]
@@ -264,6 +265,51 @@ def kw_by_suitability(roofs, eff):
     return {col: round(kw[k], 3) for (k, _), col in zip(SUITABILITY_CLASSES, SUITABILITY_COLUMNS)}
 
 
+def kwh_by_suitability(roofs):
+    """Annual PV production (kWh/year) of the selected PV roof planes per Eignung class: per-plane
+    Eac[0] as returned by request 1 (SOLAR_OPT) and sent back in request 2; the final response has no
+    per-plane values and the website shows only the total. Checked 2026-11-06 on 39 addresses: the sum
+    equals request 1's pvSystem.Eac exactly; producedKwhYear_kWh (request 2) differs by up to ~1%,
+    as does replaying the identical request 2 (the server's energy result varies between requests)."""
+    kwh = {k: 0.0 for k, _ in SUITABILITY_CLASSES}
+    for p in roofs or []:
+        if p and p.get("selected") == "true" and p.get("technologyType") == "_pv":
+            k = ((p.get("feature") or {}).get("attributes") or {}).get("klasse")
+            if k in kwh:
+                kwh[k] += float((p.get("Eac") or [0])[0] or 0)
+    return {col: round(kwh[k], 2) for (k, _), col in zip(SUITABILITY_CLASSES, PRODUCTION_COLUMNS)}
+
+
+def fill_kwh_without_plane_values(out, roofs):
+    """Some SOLAR_OPT responses list a plane twice: a clone with Eac and the original entry, selected but
+    without Eac (and not in response 1's installedArea); request 2 counts both (checked 2026-11-09, 9 homes).
+    Then the per-plane sum misses that entry. If all selected PV planes are of one class, that class's
+    production is the whole system's (producedKwhYear_kWh); otherwise the affected classes are left empty."""
+    sel = [p for p in roofs or [] if p and p.get("selected") == "true" and p.get("technologyType") == "_pv"]
+    missing = {((p.get("feature") or {}).get("attributes") or {}).get("klasse") for p in sel if not p.get("Eac")}
+    if not missing:
+        return
+    classes = {((p.get("feature") or {}).get("attributes") or {}).get("klasse") for p in sel}
+    for (k, _), col in zip(SUITABILITY_CLASSES, PRODUCTION_COLUMNS):
+        if len(classes) == 1 and k in classes and out.get("producedKwhYear_kWh") not in (None, ""):
+            out[col] = round(float(out["producedKwhYear_kWh"]), 2)
+        elif k in missing:
+            out[col] = ""
+
+
+def planes_over_area(roofs):
+    """Plane ids whose selected PV module area (sum over all entries of that plane) exceeds the plane's
+    area (flaeche). Happens when SOLAR_OPT returns the same plane twice and both are selected; the website
+    shows the same costs (checked 2026-11-09 on Dorf 70, 6162: 23.27 + 18.9 m2 on a 25.3 m2 plane)."""
+    area, flaeche = {}, {}
+    for p in roofs or []:
+        if p and p.get("selected") == "true" and p.get("technologyType") == "_pv":
+            a = (p.get("feature") or {}).get("attributes") or {}
+            area[a.get("id")] = area.get(a.get("id"), 0.0) + float(p.get("moduleNumber") or 0)
+            flaeche[a.get("id")] = float(a.get("flaeche") or 0)
+    return [i for i in area if area[i] > flaeche[i] + 0.01]
+
+
 def plane_list(roofs):
     """Short per-plane record for raw_json (the full plane objects are large)."""
     out = []
@@ -272,7 +318,8 @@ def plane_list(roofs):
             continue
         a = (p.get("feature") or {}).get("attributes") or {}
         out.append({k: a.get(k) for k in ("id", "building_id", "klasse", "neigung", "ausrichtung", "flaeche")}
-                   | {k: p.get(k) for k in ("selected", "technologyType", "moduleNumber")})
+                   | {k: p.get(k) for k in ("selected", "technologyType", "moduleNumber")}
+                   | {"Eac": (p.get("Eac") or [None])[0]})
     return out
 
 
@@ -372,6 +419,7 @@ def get_quote_for_row(row):
                 out["nominalPower_kW"] = round(float(pv["installedArea"]) * eff, 3)
             # per-plane module areas as sent in request 2 (the website shows these, not the response's roof)
             out.update(kw_by_suitability(final_roof, eff))
+            out.update(kwh_by_suitability(final_roof))
             out["existingPV_kW"] = pv.get("existingNominalPower")
             # "Stromverbrauch" field on the website (EnergyTechWidget: formerElectricConsumption, shown rounded)
             out["electricConsumption_kWh"] = (report.get("energySystem") or {}).get("formerElectricConsumption")
@@ -379,6 +427,7 @@ def get_quote_for_row(row):
                 out["producedKwhYear_kWh"] = report["pvSystem"]["Eac"][0]
             except (KeyError, IndexError):
                 pass
+            fill_kwh_without_plane_values(out, final_roof)
             try:
                 ocn = report["energySystem"]["ownConsumptionNetwork"]
                 out["selfConsumedKwhYear_kWh"] = ocn["suppliedOcn"][0]
@@ -400,6 +449,11 @@ def get_quote_for_row(row):
             # address gets replaced.
             if (report.get("pvSystem") or {}).get("isActive") != "true":
                 out["error"] = "no PV system: buildingReport pvSystem isActive=false (grossInvest 0)"
+                return out
+            # Excluded from the sample (user decision 2026-11-09), replaced like a failure; no retry.
+            over = planes_over_area(final_roof)
+            if over:
+                out["error"] = f"module area exceeds roof plane area (plane ids {over})"
                 return out
             out.pop("error", None)
             return out
