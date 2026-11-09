@@ -7,7 +7,7 @@ by canton and by municipality, taken from the federal
 | Dataset | Sample | Quotes | File |
 |---|---|---|---|
 | 🏔️ **Municipality** | up to 10 homes × 2,110 municipalities = **21,077** | **20,921** (99.3%) | `municipality/municipality_quotes_summary.csv` |
-| 🏔️ Municipality, solar thermal off | same 21,077 homes | **20,922** (99.3%) | `municipality/municipality_quotes_solar_thermal_off_summary.csv` |
+| 🏔️ Municipality, solar thermal off | same 21,077 homes | **20,921** (99.3%) | `municipality/municipality_quotes_solar_thermal_off_summary.csv` |
 | 🗺️ **Canton** | 3 homes × 26 cantons = **78** | **78** (100%) | `canton/solarrechner_quotes_summary.csv` |
 
 Results as of 2026-11-06/09 (all datasets collected again to add the annual production per
@@ -209,9 +209,8 @@ electricity consumption is lower, which changes self-consumption and payback. Th
 switches the newly proposed solar thermal planes off in the final request (as a user can on
 the website); homes with an existing solar thermal system (`existingCollectorArea`) stay as
 on the website. Same 21,077 addresses as the default dataset (quoted after its replacement
-step), no replacement of its own; `raw_json` has `solar_thermal_planes_off`. 20,922 quotes:
-the same homes as in the default dataset plus Chemin des Grèves 16, Chevroux, which fails
-there with `BUILDING_TOO_BIG`.
+step), no replacement of its own; `raw_json` has `solar_thermal_planes_off`. 20,921 quotes,
+for the same homes as in the default dataset.
 
 Result (2026-11-09), compared home by home with the default dataset:
 
