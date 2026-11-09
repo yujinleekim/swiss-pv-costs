@@ -6,15 +6,17 @@ by canton and by municipality, taken from the federal
 
 | Dataset | Sample | Quotes | File |
 |---|---|---|---|
-| 🏔️ **Municipality** | up to 10 homes × 2,110 municipalities = **21,077** | **20,931** (99.3%) | `municipality/municipality_quotes_summary.csv` |
-| 🏔️ Municipality, solar thermal off | same 21,077 homes | **20,931** (99.3%) | `municipality/municipality_quotes_solar_thermal_off_summary.csv` |
+| 🏔️ **Municipality** | up to 10 homes × 2,110 municipalities = **21,077** | **20,921** (99.3%) | `municipality/municipality_quotes_summary.csv` |
+| 🏔️ Municipality, solar thermal off | same 21,077 homes | **20,922** (99.3%) | `municipality/municipality_quotes_solar_thermal_off_summary.csv` |
 | 🗺️ **Canton** | 3 homes × 26 cantons = **78** | **78** (100%) | `canton/solarrechner_quotes_summary.csv` |
 
-Results as of 2026-10-28 (both datasets, collected again to add the kW per suitability class
-and the electricity consumption). Costs did not change since 2026-10-23: for 20,834 of the
-20,930 homes quoted in both runs the gross investment is identical. SolarRechner had lowered
-its cost estimates between 2026-10-18 and 2026-10-23 (same buildings and system size: gross
-investment −3% to −10%, median −8.7%).
+Results as of 2026-11-06/09 (all datasets collected again to add the annual production per
+suitability class). Compared with the 2026-10-28 run, the gross investment is identical for
+20,235 of the 20,900 homes quoted in both; 440 homes have a different kW (median −0.7%).
+Re-requesting all 671 changed homes on 2026-11-09 gave the new value again for 628, the old
+value for 32 and a third value for 11. SolarRechner had lowered its cost estimates between
+2026-10-18 and 2026-10-23 (same buildings and system size: gross investment −3% to −10%,
+median −8.7%).
 
 ---
 
@@ -119,8 +121,8 @@ costs in 35 of 60 tested buildings.
 
 ## Municipality dataset
 
-**21,077 addresses → 20,931 quotes (99.3%).** 2,096 of 2,110 municipalities have at least
-one quote, 2,090 have all 10.
+**21,077 addresses → 20,921 quotes (99.3%).** 2,095 of 2,110 municipalities have at least
+one quote, 2,089 have all 10.
 
 <details>
 <summary><b>1. Municipality list</b> — <code>build_municipality_list.py</code></summary>
@@ -169,6 +171,12 @@ steps). Below 10: Berken BE 8, Mauraz VD 8, Lavizzara TI 1, Cerentino TI 0.
   rule switched off the only selected plane); all 39 were replaced.
 - One address was excluded by hand and replaced: Chemin de Montofrey 3, 1040
   Villars-le-Terroir (selected module area 0.007 m², 0.0014 kW, gross CHF 6,100).
+- A quote whose selected PV module area on a roof plane is larger than the plane itself
+  counts as a failure. This happens when the website's optimization lists the same plane
+  twice and both entries stay selected (e.g. Dorf 70, Entlebuch: 23.3 + 18.9 m² of modules
+  on a 25.3 m² plane). The website shows the same costs for such a home (checked on Dorf 70),
+  but the system does not fit on the roof. 23 homes of the 2026-11-08 run; all 23 were
+  replaced.
 
 After the first quote run 802 addresses had failed; 657 were replaced by addresses of the
 same municipality that got a quote. A later check found 55 quotes (0.26%) made for another
@@ -180,6 +188,8 @@ geocoding, `/attrs` answering with another building) and were replaced the same 
 In the 2026-10-28 re-run, 1 address was replaced (geocoding, Luins) and 1 address that had a
 quote before now fails with `BUILDING_TOO_BIG` (Chemin des Grèves 16, Chevroux; its 5
 replacement candidates failed too).
+In the 2026-11-08 re-run, 21 failed addresses were replaced. All 10 homes of Mont-Noble VS
+now fail at `/attrs` (server error), and so did their replacement candidates.
 </details>
 
 <details>
@@ -198,19 +208,21 @@ not change the PV costs or kW, but they cover part of the hot water, so the hous
 electricity consumption is lower, which changes self-consumption and payback. The variant
 switches the newly proposed solar thermal planes off in the final request (as a user can on
 the website); homes with an existing solar thermal system (`existingCollectorArea`) stay as
-on the website. Same 21,077 addresses, no replacement; `raw_json` has
-`solar_thermal_planes_off`.
+on the website. Same 21,077 addresses as the default dataset (quoted after its replacement
+step), no replacement of its own; `raw_json` has `solar_thermal_planes_off`. 20,922 quotes:
+the same homes as in the default dataset plus Chemin des Grèves 16, Chevroux, which fails
+there with `BUILDING_TOO_BIG`.
 
-Result (2026-10-29), compared home by home with the default dataset:
+Result (2026-11-09), compared home by home with the default dataset:
 
 | Homes | Count | Gross investment identical | Median payback | Median change |
 |---|---:|---:|---|---|
-| Newly proposed solar thermal switched off | 3,477 | 99.5% | 15.5 → 13.1 years | self-consumption +15.7 pp, electricity consumption +2,379 kWh |
-| Existing solar thermal kept | 934 | 99.6% | 11.8 → 11.8 years | none |
-| No solar thermal | 16,520 | 99.6% | 11.2 → 11.2 years | none |
+| Newly proposed solar thermal switched off | 3,472 | 99.4% | 15.5 → 13.1 years | self-consumption +15.7 pp, electricity consumption +2,354 kWh |
+| Existing solar thermal kept | 941 | 98.5% | 11.8 → 11.8 years | none |
+| No solar thermal | 16,508 | 99.5% | 11.2 → 11.2 years | none |
 
-Of the remaining differences (69 homes without solar thermal, 0.4%), 64 have a different
-plane selection by the website's optimization between the two runs.
+The remaining differences in homes whose solar thermal is not changed (100 homes, 0.6%) are
+differences in kW or gross investment between the two runs.
 </details>
 
 ---
@@ -218,8 +230,8 @@ plane selection by the website's optimization between the two runs.
 ## Canton dataset
 
 **78 addresses → 78 quotes (100%)**, 3 per canton. 4 addresses were replaced after server
-errors (2026-10-18); in the 2026-10-24 and 2026-10-28 re-runs all 78 addresses got a quote
-again.
+errors (2026-10-18); in the 2026-10-24, 2026-10-28 and 2026-11-06 re-runs all 78 addresses
+got a quote again.
 
 <details>
 <summary><b>Scripts</b></summary>
@@ -237,12 +249,13 @@ again.
 
 ## Missing quotes
 
-The 146 municipality-level addresses without a quote all fail on Tachion's server:
+The 156 municipality-level addresses without a quote all fail on Tachion's server:
 
 | Error | Addresses | What was checked |
 |---|---:|---|
 | 🌦️ Missing weather data (`readMeteodataFile`) | 133 | The missing file is `CH<PLZ>.met` for the address's postal code (14 postal codes among the final failures; 20 seen in all runs); the server picks it from `attrs.plz4`. No address in these postal codes got a quote. 12 municipalities have only such a postal code (e.g. Yens, Brüttelen, Montfaucon); Les Enfers and Saint-Brais have no other homes left. |
 | 🧱 `buildingReport` error (`null` / NullPointerException) | 11 | All have no wall data in `/planes`; every such building tested failed (77 of 77). In Collonges VS no tested building has wall data (60 tried); the website gives no quote there either (1 address checked). |
+| 🗂️ `/attrs` error | 10 | All 10 homes of Mont-Noble VS and their replacement candidates (since 2026-11-08; they had quotes in the 2026-10-29 solar thermal off run). Cause not known. |
 | 📐 `BUILDING_TOO_BIG` (`/planes`) | 2 | Not related to building size (median footprint 107 m² vs 108 m² for successful ones). In 37 of 38 tested cases no roof plane lies inside the parcel returned by `/attrs`. |
 
 ---
@@ -262,6 +275,7 @@ The 146 municipality-level addresses without a quote all fail on Tachion's serve
 | `netInvest_CHF` | Gross investment − KLEIV − tax savings (*Nettoinvestition*) |
 | `paybackTime_years` | Payback period (*Amortisationsdauer*); depends on the residents through self-consumption |
 | `producedKwhYear_kWh` | Annual solar production (*Produzierter Solarstrom*) |
+| `producedKwhYearTop_kWh`, `producedKwhYearVeryGood_kWh`, `producedKwhYearGood_kWh`, `producedKwhYearMean_kWh`, `producedKwhYearLow_kWh` | Annual production of the selected PV planes per suitability class. The website shows only the total; per-plane values come from its first result (step 4), whose planes are sent on to the final request. Their sum equals step 4's total exactly, but `producedKwhYear_kWh` comes from step 5, and the server's energy result varies slightly between requests (also for identical requests): the five add up to `producedKwhYear_kWh` within 1% for 94% of the homes, at most 5.7% |
 | `selfConsumedKwhYear_kWh` | Self-consumed solar electricity per year |
 | `selfConsumptionPct_pct` | Self-consumption ratio (*Eigenverbrauchsanteil*) |
 | `gridFeedinKwhYear_kWh` | Electricity fed into the grid per year |
@@ -272,7 +286,7 @@ The full CSVs (`*_quotes.csv`) additionally have `egid`, `roofPlanesFound` /
 empty if the quote succeeded) and `raw_json` (attrs, parameters, cost analysis and energy
 results of the final request, plus `steep_roof_planes_off`: ids of the planes switched off
 by the 75° rule, and `roof_planes`: every roof plane sent in the final request with its
-class, tilt, orientation, area, selection and module area).
+class, tilt, orientation, area, selection, module area and annual production `Eac`).
 
 ---
 

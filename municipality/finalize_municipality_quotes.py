@@ -31,11 +31,13 @@ SUMMARY_OUTFILE = os.path.join(_HERE, "municipality_quotes_summary.csv")
 
 SUITABILITY_COLUMNS = ["nominalPowerTop_kW", "nominalPowerVeryGood_kW", "nominalPowerGood_kW",
                        "nominalPowerMean_kW", "nominalPowerLow_kW"]
+PRODUCTION_COLUMNS = ["producedKwhYearTop_kWh", "producedKwhYearVeryGood_kWh", "producedKwhYearGood_kWh",
+                      "producedKwhYearMean_kWh", "producedKwhYearLow_kWh"]
 SUMMARY_COLUMNS = [
     "canton", "municipality", "bfs_code", "address", "plz",
     "buildingGroundArea_sqm", "installedArea_sqm", "nominalPower_kW", *SUITABILITY_COLUMNS, "existingPV_kW",
     "grossInvest_CHF", "subsidies_CHF", "netInvest_CHF", "paybackTime_years",
-    "producedKwhYear_kWh", "selfConsumedKwhYear_kWh", "selfConsumptionPct_pct", "gridFeedinKwhYear_kWh",
+    "producedKwhYear_kWh", *PRODUCTION_COLUMNS, "selfConsumedKwhYear_kWh", "selfConsumptionPct_pct", "gridFeedinKwhYear_kWh",
     "electricConsumption_kWh",
 ]
 
@@ -53,6 +55,7 @@ ERROR_PATTERNS = [
     ("Tachion /attrs returned another building", r"/attrs returned another building"),
     ("No PV system in buildingReport (pvSystem isActive false, grossInvest 0)", r"no PV system"),
     ("Excluded manually (reason in the error text)", r"excluded manually"),
+    ("Module area exceeds roof plane area (same plane counted twice by SOLAR_OPT)", r"module area exceeds roof plane area"),
 ]
 
 

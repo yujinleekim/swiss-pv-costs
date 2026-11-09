@@ -17,11 +17,13 @@ OUTFILE = os.path.join(_HERE, "solarrechner_quotes_summary.csv")
 
 SUITABILITY_COLUMNS = ["nominalPowerTop_kW", "nominalPowerVeryGood_kW", "nominalPowerGood_kW",
                        "nominalPowerMean_kW", "nominalPowerLow_kW"]
+PRODUCTION_COLUMNS = ["producedKwhYearTop_kWh", "producedKwhYearVeryGood_kWh", "producedKwhYearGood_kWh",
+                      "producedKwhYearMean_kWh", "producedKwhYearLow_kWh"]
 SUMMARY_COLUMNS = [
     "canton", "address", "plz", "municipality",
     "buildingGroundArea_sqm", "installedArea_sqm", "nominalPower_kW", *SUITABILITY_COLUMNS, "existingPV_kW",
     "grossInvest_CHF", "subsidies_CHF", "netInvest_CHF", "paybackTime_years",
-    "producedKwhYear_kWh", "selfConsumedKwhYear_kWh", "selfConsumptionPct_pct", "gridFeedinKwhYear_kWh",
+    "producedKwhYear_kWh", *PRODUCTION_COLUMNS, "selfConsumedKwhYear_kWh", "selfConsumptionPct_pct", "gridFeedinKwhYear_kWh",
     "electricConsumption_kWh",
 ]
 

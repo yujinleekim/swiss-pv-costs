@@ -526,8 +526,8 @@ ZH,Illnau-Effretikon,296,Tannstrasse 56,8307,84636
 ZH,Illnau-Effretikon,296,Steinacherstrasse 4,8308,85733
 ZH,Illnau-Effretikon,296,Oberholzstrasse 38,8307,3021995
 ZH,Illnau-Effretikon,296,Haldenrainstrasse 24,8308,210123558
-ZH,Illnau-Effretikon,296,Sonnenbergstrasse 21,8308,85727
-ZH,Illnau-Effretikon,296,Säntisstrasse 18,8308,85972
+ZH,Illnau-Effretikon,296,Hegnauerstrasse 10,8307,86499
+ZH,Illnau-Effretikon,296,Würglenstrasse 17,8307,85003
 ZH,Illnau-Effretikon,296,Lindenstrasse 74,8307,85492
 ZH,Zumikon,160,Im Ring 5,8126,80207
 ZH,Zumikon,160,Dorfstrasse 92,8126,79938
@@ -671,7 +671,7 @@ ZH,Oberrieden,137,In der Weid 5,8942,3019693
 ZH,Oberrieden,137,Seestrasse 27,8942,58897
 ZH,Langnau am Albis,136,Im Unterrengg 21,8135,3019599
 ZH,Langnau am Albis,136,Rütihaldenstrasse 14,8135,3019630
-ZH,Langnau am Albis,136,Eggwiesweg 10,8135,58160
+ZH,Langnau am Albis,136,Eichstrasse 2,8135,58139
 ZH,Langnau am Albis,136,Birkenstrasse 18,8135,58562
 ZH,Langnau am Albis,136,Sihlwaldstrasse 16,8135,3019540
 ZH,Langnau am Albis,136,Birkenstrasse 44,8135,58578
@@ -797,7 +797,7 @@ ZH,Gossau (ZH),115,Breitistrasse 34,8614,42455
 ZH,Gossau (ZH),115,Bönlerstrasse 110,8624,42861
 ZH,Gossau (ZH),115,Langweidstrasse 16,8624,42762
 ZH,Gossau (ZH),115,Hinwilerstrasse 235,8626,210095156
-ZH,Gossau (ZH),115,Wibergstrasse 10,8626,41802
+ZH,Gossau (ZH),115,Büelgass 20,8625,3134758
 ZH,Gossau (ZH),115,Wabergstrasse 15,8624,42705
 ZH,Hinwil,117,Plattenstrasse 1,8340,45271
 ZH,Hinwil,117,Pilgerweg 6,8340,44737
@@ -1100,7 +1100,7 @@ ZH,Wallisellen,69,Sandgrubstrasse 29,8304,201041453
 ZH,Wallisellen,69,Hueberstrasse 4,8304,26245
 ZH,Wallisellen,69,Obere Kirchstrasse 28,8304,26472
 ZH,Bülach,53,Murgasse 9,8180,16036
-ZH,Bülach,53,Kasernenstrasse 76,8180,15640
+ZH,Bülach,53,Eichenweg 7,8180,2260443
 ZH,Bülach,53,Rietlistrasse 5,8180,2260433
 ZH,Bülach,53,Bruederstrasse 7,8180,201021044
 ZH,Bülach,53,Dachslenbergstrasse 54,8180,16362
@@ -1146,7 +1146,7 @@ ZH,Freienstein-Teufen,57,Irchelstrasse 34,8427,200295350
 ZH,Freienstein-Teufen,57,Alte Landstrasse 16,8428,201020136
 ZH,Freienstein-Teufen,57,Dorfstrasse 12,8428,19417
 ZH,Freienstein-Teufen,57,Dorfstrasse 36,8427,19335
-ZH,Freienstein-Teufen,57,Breitestrasse 25,8427,19173
+ZH,Freienstein-Teufen,57,Urbigrabenstrasse 23,8427,19156
 ZH,Freienstein-Teufen,57,Ribergweg 14,8427,3115124
 ZH,Freienstein-Teufen,57,Unterer Buck 9,8428,19438
 ZH,Glattfelden,58,Haldenweg 3,8192,19610
@@ -1276,7 +1276,7 @@ ZH,Nürensdorf,64,Hakabstrasse 17,8309,23095
 ZH,Nürensdorf,64,Talwiesenstrasse 10,8309,22890
 ZH,Nürensdorf,64,Morgenackerstrasse 10,8309,23031
 ZH,Nürensdorf,64,Breitenloo 2,8309,23565
-ZH,Nürensdorf,64,Hatzenbühlstrasse 23,8309,23004
+ZH,Nürensdorf,64,Sunnerainstrasse 12,8309,23437
 ZH,Nürensdorf,64,Lebernstrasse 5,8309,22959
 ZH,Nürensdorf,64,Roswiesenstrasse 47,8309,23191
 ZH,Volken,43,Rütihof 224,8459,13524
@@ -1438,7 +1438,7 @@ ZH,Rheinau,38,Stygstrasse 8,8462,3014354
 ZH,Rheinau,38,Salmenweg 25,8462,12453
 ZH,Rheinau,38,Alter Schulweg 17,8462,12418
 ZH,Rheinau,38,Rheingasse 27,8462,12496
-ZH,Rheinau,38,Volkenbachweg 8,8462,3114856
+ZH,Rheinau,38,Austrasse 26,8462,210043545
 ZH,Ossingen,37,Oberer Grundweg 20,8475,12132
 ZH,Ossingen,37,Oberer Grundweg 17,8475,201004269
 ZH,Ossingen,37,Grundstrasse 2,8475,12070
@@ -2959,7 +2959,7 @@ BE,Walliswil bei Wangen,991,Hintere Ringstrasse 1,3377,1452074
 BE,Walliswil bei Wangen,991,Heimenhausenstrasse 34,3377,1451918
 BE,Wiedlisbach,995,Hinterstädtli 33,4537,1453024
 BE,Wiedlisbach,995,Weingartenweg 1,4537,1453157
-BE,Wiedlisbach,995,Oeleweg 10,4537,1453057
+BE,Wiedlisbach,995,Geissgraben 8,4537,190040751
 BE,Wiedlisbach,995,Hasensprung 4,4537,1452874
 BE,Wiedlisbach,995,Oeleweg 5,4537,1453053
 BE,Wiedlisbach,995,Juraweg 6,4537,3072259
@@ -3729,7 +3729,7 @@ BE,Konolfingen,612,Burgdorfstrasse 18,3510,1355748
 BE,Konolfingen,612,Hürnberg 458,3503,1356314
 BE,Landiswil,613,Lochmatt 93,3434,1357125
 BE,Landiswil,613,Dorf 61,3434,1357062
-BE,Landiswil,613,Zimmermatt 40,3434,1357038
+BE,Landiswil,613,Spränzel 44,3508,1357036
 BE,Landiswil,613,Thalacker 74,3434,1357024
 BE,Landiswil,613,Aspihubel 129,3434,1357170
 BE,Landiswil,613,Dorf 96,3434,1357137
@@ -3995,7 +3995,7 @@ BE,Kaufdorf,869,Stutzstrasse 30,3126,190127094
 BE,Kaufdorf,869,Falesseweg 22,3126,191599534
 BE,Kaufdorf,869,Stutzstrasse 20,3126,3138925
 BE,Kaufdorf,869,Trümlerestrasse 22,3126,1411663
-BE,Kaufdorf,869,Husmatt 17,3126,1411698
+BE,Kaufdorf,869,Gebelstrasse 37,3126,3138913
 BE,Kaufdorf,869,Nilleweg 4,3126,1411660
 BE,Kehrsatz,870,Hubelhohle 9,3122,1412062
 BE,Kehrsatz,870,Kirchweg 18,3122,101033680
@@ -4183,7 +4183,7 @@ BE,Seftigen,883,Hübeli 2,3662,1415194
 BE,Seftigen,883,Eymatt 11,3662,3139264
 BE,Seftigen,883,Längmättli 11,3662,190144256
 BE,Seftigen,883,Ausserdorf 40,3662,1415089
-BE,Seftigen,883,Obere Wydmatt 13,3662,1415312
+BE,Seftigen,883,Blattackerstrasse 10,3662,190099822
 BE,Seftigen,883,Breitenacker 9,3662,1415042
 BE,Seftigen,883,Blattackerstrasse 2,3662,101034849
 BE,Seftigen,883,Stockhornweg 3,3662,1415278
@@ -4272,7 +4272,7 @@ BE,Hilterfingen,929,Laueliweg 5,3652,1425685
 BE,Hilterfingen,929,Höheweg 58,3626,1425662
 BE,Hilterfingen,929,Spychertenstrasse 4,3652,190012156
 BE,Hilterfingen,929,Tannenbühlweg 33,3652,190200281
-BE,Hilterfingen,929,Sodstrasse 11,3652,1425849
+BE,Hilterfingen,929,Weingartenstrasse 18,3652,1425790
 BE,Hilterfingen,929,Staatsstrasse 53,3652,1425930
 BE,Hilterfingen,929,Hünibachstrasse 98,3626,1425531
 BE,Hilterfingen,929,Niesenweg 16,3626,1425558
@@ -4632,7 +4632,7 @@ BE,Oberwil im Simmental,766,Oberried 381,3765,1393062
 BE,Oberwil im Simmental,766,Halten 79,3765,1393176
 BE,Oberwil im Simmental,766,Lehn 399,3765,1393082
 BE,Oberwil im Simmental,766,Wellenberg 508,3764,1393106
-BE,Oberwil im Simmental,766,Loos 347,3765,1393044
+BE,Oberwil im Simmental,766,Kehr 425,3765,1393087
 BE,Oberwil im Simmental,766,Egg 402,3765,1393070
 BE,Oberwil im Simmental,766,Lehn 398,3765,1393080
 BE,Oberwil im Simmental,766,Bunschen 187,3765,1392891
@@ -4819,7 +4819,7 @@ BE,Matten bei Interlaken,587,Lärchenweg 9,3800,1349251
 BE,Matten bei Interlaken,587,Rugenstrasse 21,3800,3062978
 BE,Niederried bei Interlaken,588,Breitenackerstrasse 5,3853,190092313
 BE,Niederried bei Interlaken,588,Talackerweg 10,3853,3170957
-BE,Niederried bei Interlaken,588,Ursisbalmweg 16,3853,1349558
+BE,Niederried bei Interlaken,588,Hauptstrasse 55,3853,1349493
 BE,Niederried bei Interlaken,588,Zylenweg 3,3853,1349494
 BE,Niederried bei Interlaken,588,Wyssechenstrasse 10,3853,1349504
 BE,Niederried bei Interlaken,588,Wyssechenstrasse 4,3853,1349502
@@ -5312,7 +5312,7 @@ LU,Hildisrieden,1088,Sonnerain 11,6024,3084081
 LU,Hildisrieden,1088,Waldmatt 10,6024,222425
 LU,Hildisrieden,1088,Sempacherstrasse 20,6024,222287
 LU,Hildisrieden,1088,Schlüsselrain 17,6024,222225
-LU,Hildisrieden,1088,Sandgütsch 18,6024,222269
+LU,Hildisrieden,1088,Waldmatt 2,6024,222429
 LU,Hildisrieden,1088,Sonnhaldehof 26,6024,190504433
 LU,Hildisrieden,1088,Länzeweid 4,6024,2066628
 LU,Hildisrieden,1088,Sonnhaldehof 30,6024,190504510
@@ -5698,7 +5698,7 @@ LU,Doppleschwand,1001,Holz 4,6112,2044404
 LU,Doppleschwand,1001,Brunnhalde 11,6112,2044377
 LU,Doppleschwand,1001,Brüggweid 1,6112,188283
 LU,Entlebuch,1002,Mittler Rotmoos 2,6162,188947
-LU,Entlebuch,1002,Dorf 70,6162,2044508
+LU,Entlebuch,1002,Schwändi 25,6162,2383881
 LU,Entlebuch,1002,ob Chile 17,6162,2044506
 LU,Entlebuch,1002,Erlengraben 11,6162,188868
 LU,Entlebuch,1002,Schwändeli 3,6162,188973
@@ -6301,7 +6301,7 @@ NW,Stans,1509,Wirzboden 57,6370,190197151
 NW,Stans,1509,Bahnhofstrasse 15,6370,284952
 NW,Stans,1509,Buochserstrasse 8,6370,284824
 NW,Stans,1509,Schmiedgasse 39,6370,285033
-NW,Stans,1509,Stalden 1,6370,285151
+NW,Stans,1509,Alp Bluematt 3,6370,191961126
 NW,Stans,1509,Breitenstrasse 18,6370,3089733
 NW,Stans,1509,Hostettli 1,6370,190355831
 NW,Stans,1509,Breitenstrasse 128,6370,284545
@@ -7498,7 +7498,7 @@ FR,Mézières (FR),2087,Chemin des Praz Communaux 7,1684,235004756
 FR,Mézières (FR),2087,Route de Romont 27,1684,1506931
 FR,Mézières (FR),2087,Impasse de la Croix 28,1680,1505783
 FR,Siviriez,2099,Route de Bulle 18,1679,191394395
-FR,Siviriez,2099,Route de Brenles 79,1678,3120908
+FR,Siviriez,2099,Chemin de la Côte 8,1678,1508158
 FR,Siviriez,2099,Route de Brenles 82,1678,1508187
 FR,Siviriez,2099,Impasse du Clos Perroud 17,1678,235555319
 FR,Siviriez,2099,Chemin Clos-du-Vernay 4,1677,235555894
@@ -8225,7 +8225,7 @@ SO,Unterramsern,2463,Rain 78,4588,339030
 SO,Unterramsern,2463,Schulgässli 101,4588,190180505
 SO,Unterramsern,2463,Schulgässli 102,4588,190180513
 SO,Unterramsern,2463,Hauptstrasse 65,4588,339040
-SO,Unterramsern,2463,Hauptstrasse 39,4588,339047
+SO,Unterramsern,2463,Rüti 115,4588,191636431
 SO,Unterramsern,2463,Limpachstrasse 49,4588,339023
 SO,Biezwil,2445,Tannentürliweg 50,4585,337370
 SO,Biezwil,2445,Hämmenhubel 172,4585,3007236
@@ -10155,7 +10155,7 @@ AI,Oberegg,3111,Unterdorfstrasse 31,9413,1716037
 AI,Oberegg,3111,Oberdorfstrasse 10,9413,191251415
 AI,Oberegg,3111,Kirchplatz 9,9413,1715886
 AI,Oberegg,3111,Ackerstrasse 2,9413,1715701
-AI,Oberegg,3111,Fallbachstrasse 2,9413,1715695
+AI,Oberegg,3111,Unterdorfstrasse 1,9413,1715854
 AI,Oberegg,3111,Honeggstrasse 24,9413,1715792
 AI,Schwende-Rüte,3112,Kreuzhofstrasse 29,9050,1714281
 AI,Schwende-Rüte,3112,Böhlisjockes 36,9057,190588968
@@ -10179,7 +10179,7 @@ SG,Ebnat-Kappel,3352,Berg-Blomberg 2911,9643,1041164
 SG,Ebnat-Kappel,3352,Blomberg 2819,9642,1041169
 SG,Lichtensteig,3374,Burg 610,9620,1044533
 SG,Lichtensteig,3374,Uttenwilerstrasse 41,9620,1044689
-SG,Lichtensteig,3374,Schwendiweg 3,9620,1044504
+SG,Lichtensteig,3374,Oberplattenstrasse 50,9620,3152084
 SG,Lichtensteig,3374,Schabeggweg 13,9620,1044481
 SG,Lichtensteig,3374,Grabengasse 6,9620,1044459
 SG,Lichtensteig,3374,Unterplattenstrasse 50,9620,191780251
@@ -10458,7 +10458,7 @@ SG,Buchs (SG),3271,Sennereigasse 21,9470,1100503
 SG,Buchs (SG),3271,Burgerauerstrasse 37,9470,1099150
 SG,Buchs (SG),3271,Grofstrasse 7,9470,1100297
 SG,Gams,3272,Grabserstrasse 27,9473,1101490
-SG,Gams,3272,Widemweg 4,9473,1101368
+SG,Gams,3272,Oberfelsbachstrasse 22,9473,1101352
 SG,Gams,3272,Frol 1368,9473,1101764
 SG,Gams,3272,Vorburg 38,9473,3148346
 SG,Gams,3272,Usserbach 7,9473,1101714
@@ -10791,7 +10791,7 @@ SG,Au (SG),3231,Emserenstrasse 23,9434,1084559
 SG,Au (SG),3231,Garbenstrasse 8,9434,1084661
 SG,Au (SG),3231,Feldstrasse 4,9435,3146235
 SG,Au (SG),3231,Nefenstrasse 19,9435,1084034
-SG,Au (SG),3231,Mennweg 2,9434,1085128
+SG,Au (SG),3231,Fischerweg 35,9434,3146312
 SG,Au (SG),3231,Burgstrasse 1,9434,1085065
 SG,Au (SG),3231,Tägerenstrasse 9,9434,1084584
 SG,Au (SG),3231,Büchelstrasse 31,9434,190183357
@@ -11839,7 +11839,7 @@ GR,Domleschg,3673,Oberdorf 24,7416,1180651
 GR,Domleschg,3673,Punis 19,7417,1180965
 GR,Thusis,3668,Untere Stallstrasse 2,7430,1183088
 GR,Thusis,3668,Eichweg 10,7430,1182845
-GR,Thusis,3668,Heinzenbergstrasse 30,7430,1182793
+GR,Thusis,3668,Studaweg 12,7430,190137700
 GR,Thusis,3668,Bachweg 18,7430,190187152
 GR,Thusis,3668,Dorfstrasse 91,7431,1170146
 GR,Thusis,3668,Stafel 27,7431,1170178
@@ -12296,7 +12296,7 @@ AG,Hellikon,4251,Stangenmatt 28,4316,3158767
 AG,Hellikon,4251,Chilchgässli 8,4316,604738
 AG,Hellikon,4251,Chesselacker 7,4316,190189363
 AG,Hellikon,4251,Rebmatt 6,4316,604638
-AG,Hellikon,4251,Stockenrain 7,4316,101069975
+AG,Hellikon,4251,Obere Strasse 43,4316,263006896
 AG,Mumpf,4255,Rheinstrasse 61,4322,101248777
 AG,Mumpf,4255,Rifeldweg 32,4322,190352418
 AG,Mumpf,4255,Lindenweg 9,4322,3159006
@@ -13488,7 +13488,7 @@ AG,Oberwil-Lieli,4074,Birmensdorferstrasse 80,8966,190183366
 AG,Oberwil-Lieli,4074,Höhenweg 6,8966,559842
 AG,Oberwil-Lieli,4074,Augenweidstrasse 88,8966,559686
 AG,Villmergen,4080,Alte Bruggerstrasse 25,5605,263107067
-AG,Villmergen,4080,Schlossstrasse 2,5613,558464
+AG,Villmergen,4080,Kessimoosstrasse 9,5612,2708105
 AG,Villmergen,4080,Mittlerer Talackerweg 30,5612,2708434
 AG,Villmergen,4080,Kornweg 12,5612,190194576
 AG,Villmergen,4080,Feldblumenweg 23,5612,562235
@@ -14768,15 +14768,15 @@ TI,Castel San Pietro,5249,Via alle Corti 44,6873,190169595
 TI,Castel San Pietro,5249,Via alla Chiesa 16,6874,11156134
 TI,Castel San Pietro,5249,Nuree 8,6874,11156194
 TI,Breggia,5269,Via Cantonale 20,6837,11155879
-TI,Breggia,5269,Via Cantonale 106,6838,11160846
+TI,Breggia,5269,ala Culmanéta 8,6839,11162416
 TI,Breggia,5269,Via al Piazz 5,6837,11155868
 TI,Breggia,5269,Strada Végia 5,6837,400007157
-TI,Breggia,5269,ala Múra 10,6837,11155685
-TI,Breggia,5269,Via San Rocco 4,6838,11155764
+TI,Breggia,5269,Strada Növa 2,6835,11160683
+TI,Breggia,5269,a Mariöö 11,6839,11162431
 TI,Breggia,5269,Strada Vegia 1,6835,11160729
-TI,Breggia,5269,Via Uggine 52,6838,11208793
+TI,Breggia,5269,Lecch 11,6835,11160644
 TI,Breggia,5269,in Caüsc 20,6839,190114763
-TI,Breggia,5269,Via alla Chiesa 15,6838,11160772
+TI,Breggia,5269,Via Lungur 10,6837,400007155
 TI,Mendrisio,5254,Via Giorgio Bernasconi 4,6850,11159002
 TI,Mendrisio,5254,Via Rubiána 6,6863,11155535
 TI,Mendrisio,5254,Via ai Grotti 14,6865,274002221
@@ -16335,7 +16335,7 @@ VD,Bournens,5472,Chemin du Record Joyon 9,1035,862539
 VD,Bournens,5472,Route du Crochet 9,1035,281009557
 VD,Bournens,5472,Chemin du Record Joyon 1,1035,862542
 VD,Bournens,5472,Chemin du Poyet 2,1035,862583
-VD,Bournens,5472,Les Moulins-de-Bettens 1,1035,862592
+VD,Bournens,5472,Chemin du Bugnon 9,1035,280080544
 VD,Bournens,5472,Chemin du Recordet 6,1035,280079233
 VD,Bournens,5472,Chemin du Poyet 1,1035,3101139
 VD,Boulens,5661,Route de la Croix 11,1063,280074626
@@ -16591,7 +16591,7 @@ VD,Lignerolle,5755,En Sonville 6,1357,817964
 VD,Les Clées,5750,Chemin de la Pouette 6,1356,817617
 VD,Les Clées,5750,Rue du Pressoir 4,1356,280059412
 VD,Les Clées,5750,Chemin du Raffour 1,1356,817643
-VD,Les Clées,5750,Vers le Bordeloz 3,1356,280090617
+VD,Les Clées,5750,Vers-le-Pont 7,1356,817641
 VD,Les Clées,5750,Impasse du Château 2,1356,817629
 VD,Les Clées,5750,Les Crosets 10,1356,817635
 VD,Les Clées,5750,Rue du Pralet 6,1356,817649
@@ -17327,7 +17327,7 @@ VD,Saint-Saphorin (Lavaux),5610,Chemin du Rocher 5,1071,101090258
 VD,Saint-Saphorin (Lavaux),5610,Chemin de Mont-de-Plan 38,1071,3162981
 VD,Saint-Saphorin (Lavaux),5610,Chemin Neuf 8,1071,792513
 VD,Saint-Saphorin (Lavaux),5610,Chemin du Chapon 6,1071,792485
-VD,Saint-Saphorin (Lavaux),5610,Escalier du Chevet-du-Temple 10,1071,792510
+VD,Saint-Saphorin (Lavaux),5610,Chemin des Rueyres 18,1071,280101893
 VD,Rivaz,5609,Rue du Collège 4,1071,792441
 VD,Rivaz,5609,Sur-la-Croix 13,1071,792402
 VD,Rivaz,5609,Sur-la-Croix 9,1071,792405
@@ -17605,7 +17605,7 @@ VD,Moiry,5490,Route de Chevilly 4,1148,280098431
 VD,Moiry,5490,Grand-Rue 7,1148,864545
 VD,Moiry,5490,Chemin de Forny 2,1148,101447856
 VD,Moiry,5490,Chemin des Grassis 4,1148,864553
-VD,Moiry,5490,Route de La Praz 4,1148,864534
+VD,Moiry,5490,Chemin de Forny 5,1148,280061371
 VD,Moiry,5490,Route de Ferreyres 13,1148,864572
 VD,Moiry,5490,Route de Ferreyres 11,1148,3126506
 VD,Mauraz,5488,Ruelle du Crêt 1,1148,864373
@@ -17733,7 +17733,7 @@ VD,Bière,5425,Chemin de Fagne 2,1145,3126357
 VD,Bière,5425,Rue de Valangin 2,1145,858745
 VD,Bière,5425,Avenue du Tir Fédéral 8,1145,280062577
 VD,Bière,5425,Route du Marchairuz 28,1145,858734
-VD,Bière,5425,Le Toleure 8,1145,858546
+VD,Bière,5425,Chemin des Moulins 3,1145,280078168
 VD,Bière,5425,Rue de la Cheneau 8,1145,858720
 VD,Bière,5425,Chemin du Châtelard 6,1145,3126370
 VD,Berolle,5424,Route des Molliettes 19,1149,858526
@@ -17779,7 +17779,7 @@ VD,Aclens,5621,Chemin du Stand 1,1123,793538
 VD,Allaman,5851,Chemin Sous Rochefort 7,1165,827814
 VD,Allaman,5851,Route d'Aubonne 4,1165,827888
 VD,Allaman,5851,Grand-Rue 25,1165,827793
-VD,Allaman,5851,Chemin de la Pêcherie 3,1165,827879
+VD,Allaman,5851,Chemin de Bohème 9,1165,827867
 VD,Allaman,5851,Grand-Rue 2,1165,827801
 VD,Allaman,5851,Ruelle de la Croix 5,1165,827805
 VD,Allaman,5851,Route Suisse 12,1165,827880
@@ -18105,7 +18105,7 @@ VD,Nyon,5724,Grand-Rue 38,1260,813453
 VD,Nyon,5724,Chemin de Bois-Bougy 2,1260,280004687
 VD,Nyon,5724,Chemin Valmont 324,1260,3127627
 VD,Nyon,5724,Route du Stand 26,1260,812386
-VD,Nyon,5724,Rue de la Colombière 25,1260,813369
+VD,Nyon,5724,Chemin Valmont 304,1260,3127619
 VD,Mies,5723,Vy-à-Vaux 3,1295,812076
 VD,Mies,5723,Chemin des Ouches 45,1295,280129173
 VD,Mies,5723,Chemin de la Griottière 4,1295,812078
@@ -18578,7 +18578,7 @@ VD,Jongny,5885,Chemin de l'Union 4,1805,190063611
 VD,Jongny,5885,Chemin du Grammont 11,1805,834960
 VD,La Tour-de-Peilz,5889,Chemin de Crêt-Richard 55,1814,280096434
 VD,La Tour-de-Peilz,5889,Chemin Adolphe-Burnat 8,1814,839782
-VD,La Tour-de-Peilz,5889,Chemin de la Paisible 52,1814,280093691
+VD,La Tour-de-Peilz,5889,Route de Saint-Maurice 102,1814,839104
 VD,La Tour-de-Peilz,5889,Chemin de la Becque 19,1814,280056915
 VD,La Tour-de-Peilz,5889,Chemin de la Becque 38,1814,839109
 VD,La Tour-de-Peilz,5889,Route de Sichoz 22,1814,840003
@@ -18943,7 +18943,7 @@ VS,Gampel-Bratsch,6118,Meiggweg 32,3945,500009508
 VS,Gampel-Bratsch,6118,Milidorfstrasse 25,3957,912419
 VS,Gampel-Bratsch,6118,Bratschweg 12,3945,912487
 VS,Gampel-Bratsch,6118,Bergstrasse 54,3945,3108528
-VS,Gampel-Bratsch,6118,Niedergampelstrasse 38,3945,101157757
+VS,Gampel-Bratsch,6118,Hahnenviertel 4,3945,912964
 VS,Gampel-Bratsch,6118,Drielgasse 7,3945,912914
 VS,Gampel-Bratsch,6118,Kirchstrasse 39,3945,912978
 VS,Leuk,6110,Alpstrasse Meschler 53,3952,190852972
@@ -19106,14 +19106,14 @@ VS,Goms,6077,Ritzingerstrasse 8,3989,3107657
 VS,Goms,6077,Sennereigasse 2,3985,190168611
 VS,Goms,6077,Oberfeldstrasse 4,3985,907310
 VS,Goms,6077,Golleristrasse 22,3998,190174434
-VS,Bourg-Saint-Pierre,6032,Rue de Vie 14,1946,3107292
+VS,Bourg-Saint-Pierre,6032,Rue de Vie 18,1946,190324028
 VS,Bourg-Saint-Pierre,6032,Route Vieille 20,1946,9033869
 VS,Bourg-Saint-Pierre,6032,Rue de Derrière 26,1946,902629
 VS,Bourg-Saint-Pierre,6032,Route de Raveire 27,1946,3107283
 VS,Bourg-Saint-Pierre,6032,Rue du Bourg 13,1946,902580
 VS,Bourg-Saint-Pierre,6032,Route Vieille 21,1946,902561
 VS,Bourg-Saint-Pierre,6032,Route de Raveire 25,1946,3107282
-VS,Bourg-Saint-Pierre,6032,Rue Derrière Ville 32,1946,902664
+VS,Bourg-Saint-Pierre,6032,Rue de Vie 6,1946,902589
 VS,Bourg-Saint-Pierre,6032,Route du Grand Saint Bernard 28,1946,3107289
 VS,Bourg-Saint-Pierre,6032,Rue Derrière Ville 31,1946,902666
 VS,Liddes,6033,Les Planches 2,1945,192023332
@@ -20516,7 +20516,7 @@ GE,Satigny,6638,Chemin des Grandes-Vignes 26,1242,1025593
 GE,Satigny,6638,Chemin de la Boverie 12,1242,1025485
 GE,Satigny,6638,Route de Peissy 41,1242,1025512
 GE,Satigny,6638,Chemin du Château-des-Bois 24,1242,1025756
-GE,Puplinge,6636,Rue de Graman 7,1241,1024938
+GE,Puplinge,6636,Rue de Graman 21,1241,1024928
 GE,Puplinge,6636,Rue de Graman 22,1241,1024921
 GE,Puplinge,6636,Route de Puplinge 34,1241,295097366
 GE,Puplinge,6636,Route de Cornière 28,1241,1024905
